@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE frameset PUBLIC "-//PB//PropBank Frame v3.4 Transitional//EN" "http://propbank.org/specification/dtds/v3.4/frameset.dtd">
+<frameset>
+  <predicate lemma="horizontal">
+    <roleset id="horizontal.01" name="orientation: parallel to the horizon">
+      <aliases>
+        <alias pos="j">horizontal</alias>
+        <alias pos="r">horizontally</alias>
+      </aliases>
+      <roles>
+        <role descr="horizontal entity" f="SE1" n="1"/>
+        <role descr="entity parallel to, if explicit" f="SE2" n="2"/>
+        <role descr="anchor" f="ANC" n="3"/>
+        <role descr="axis" f="AXS" n="4"/>
+      </roles>
+      <usagenotes>
+        <usage resource="PropBank" version="1.0" inuse="-"/>
+        <usage resource="PropBank" version="2.1.5" inuse="-"/>
+        <usage resource="PropBank" version="3.1" inuse="+"/>
+        <usage resource="PropBank" version="3.4" inuse="+"/>
+        <usage resource="AMR" version="2019" inuse="-"/>
+        <usage resource="PropBank" version="Flickr 1.0" inuse="+"/>
+        </usagenotes>
+      <lexlinks/>
+      <example name="horizontal-j" src="">
+        <text>One cable is at an angle to the horizontal and the other is horizontal to the ground .</text>
+        <propbank>
+          <rel relloc="13">horizontal</rel>
+          <arg end="11" start="10" type="ARG1">the other</arg>
+          <arg end="16" start="14" type="ARG2">to the ground</arg>
+        </propbank>
+        <amr version="Spatial 1.0">
+          (a / and
+            :op1 (a2 / angle-02
+              :ARG1 (c / cable :quant 1)
+              :ARG3 (h / horizon))
+            :op2 (h2 / horizontal-01
+              :ARG1 (c2 / cable
+                :ARG1-of (o / other-01
+                  :ARG2 c))
+              :ARG4 (g / ground)))
+        </amr>
+      </example>
+      <note>HORIZONTAL NOTES: Updated for SpatialAMR.</note>
+      <note>HORIZONTAL-J NOTES: (from horizontal.01-j)</note>
+    </roleset>
+    </predicate>
+</frameset>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE frameset PUBLIC "-//PB//PropBank Frame v3.4 Transitional//EN" "http://propbank.org/specification/dtds/v3.4/frameset.dtd">
+<frameset>
+  <predicate lemma="historicize">
+    <roleset id="historicize.01" name="to make or make appear historical">
+      <aliases>
+        <alias pos="v">historicize</alias>
+      </aliases>
+      <roles>
+        <role descr="person making something seem historical" f="PAG" n="0"/>
+        <role descr="thing made legendary" f="PPT" n="1"/>
+      </roles>
+      <usagenotes>
+        <usage resource="PropBank" version="1.0" inuse="-"/>
+        <usage resource="PropBank" version="2.1.5" inuse="-"/>
+        <usage resource="PropBank" version="3.1" inuse="+"/>
+        <usage resource="PropBank" version="3.4" inuse="+"/>
+        <usage resource="AMR" version="2019" inuse="-"/>
+        <usage resource="PropBank" version="Flickr 1.0" inuse="+"/>
+        </usagenotes>
+      <example name="historicize-v: Passive, arg1 only" src="wsj-nw">
+        <text>Why not watch or hear your experience historicized while you were living it ?</text>
+        <propbank>
+          <rel relloc="7">historicized</rel>
+          <arg end="6" start="5" type="ARG1">your experience</arg>
+        </propbank>
+      </example>
+      <example name="historicize-v: All args" src="web">
+        <text>What I set out to do in those posts was historicize the doomsters .</text>
+        <propbank>
+          <rel relloc="10">historicize</rel>
+          <arg end="1" start="1" type="ARG0">I</arg>
+          <arg end="12" start="11" type="ARG1">the doomsters</arg>
+        </propbank>
+      </example>
+      <note>HISTORICIZE-V NOTES: Roleset based on instances in wsj-nw. Framed by Claire. (from historicize.01-v)</note>
+    </roleset>
+  </predicate>
+  </frameset>

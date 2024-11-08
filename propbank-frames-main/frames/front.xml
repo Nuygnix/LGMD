@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE frameset PUBLIC "-//PB//PropBank Frame v3.4 Transitional//EN" "http://propbank.org/specification/dtds/v3.4/frameset.dtd">
+<frameset>
+  <predicate lemma="front">
+    <roleset id="front.01" name="be the front portion of a larger whole">
+      <aliases>
+        <alias pos="n">front</alias>
+        <alias pos="j">front</alias>
+        <alias pos="p">at_the_front_of</alias>
+        <alias pos="r">at_the_front</alias>
+      </aliases>
+      <roles>
+        <role descr="entity that is the front portion" f="PRT" n="1"/>
+        <role descr="larger whole" f="WHL" n="2"/>
+        <role descr="anchor" f="ANC" n="3"/>
+        <role descr="axis" f="AXS" n="4"/>
+      </roles>
+      <usagenotes>
+        <usage resource="PropBank" version="1.0" inuse="-"/>
+        <usage resource="PropBank" version="2.1.5" inuse="-"/>
+        <usage resource="PropBank" version="3.1" inuse="+"/>
+        <usage resource="PropBank" version="3.4" inuse="+"/>
+        <usage resource="AMR" version="2019" inuse="-"/>
+        <usage resource="PropBank" version="Flickr 1.0" inuse="+"/>
+        </usagenotes>
+      <lexlinks/>
+      <example name="front-j" src="">
+        <text>Our room was front of house</text>
+        <propbank>
+          <rel relloc="3">front</rel>
+          <arg end="5" start="4" type="ARG2">of house</arg>
+        </propbank>
+        <amr version="Spatial 1.0">
+         (f2 / front-01
+            :ARG1 (r / room
+              :poss (w / we))
+            :ARG2 (h / house))
+        </amr>
+      </example>
+      <example name="front-n" src="Minecraft">
+        <text>Remove the front block of the structure .</text>
+        <propbank>
+          <rel relloc="2">front</rel>
+          <arg end="3" start="3" type="ARG1">block</arg>
+          <arg end="6" start="4" type="ARG2">of the structure</arg>
+        </propbank>
+        <amr version="Spatial 1.0">
+          (r / remove-01 :mode imperative
+            :ARG0 (y / you)
+            :ARG1 (b / block
+              :ARG1-of (f / front-01
+                :ARG2 (s / structure))))
+        </amr>
+      </example>
+      <note>FRONT NOTES: Updated for SpatialAMR. Args 1 and 2 (and name) reworded, Args 3 and 4 added as pragmatic roles.</note>
+      <note>FRONT-J NOTES: Added automatically by Julia. (from front.01-j)</note>
+    </roleset>
+    </predicate>
+  <predicate lemma="up_front">
+    <roleset id="up_front.02" name="be straightfoward and honest with">
+      <aliases>
+        <alias pos="j">up_front</alias>
+      </aliases>
+      <roles>
+        <role descr="speaker, one who is direct and honest" f="PAG" n="0"/>
+        <role descr="subject matter, about what" f="PPT" n="1"/>
+        <role descr="listener" f="GOL" n="2"/>
+      </roles>
+      <usagenotes>
+        <usage resource="PropBank" version="1.0" inuse="-"/>
+        <usage resource="PropBank" version="2.1.5" inuse="-"/>
+        <usage resource="PropBank" version="3.1" inuse="+"/>
+        <usage resource="PropBank" version="3.4" inuse="+"/>
+        <usage resource="AMR" version="2019" inuse="-"/>
+        <usage resource="PropBank" version="Flickr 1.0" inuse="+"/>
+        </usagenotes>
+      <example name="up_front-j: All args" src="">
+        <text>The mechanic was very up front and honest about the extent of the problem with us .</text>
+        <propbank>
+          <rel relloc="4 5">up front</rel>
+          <arg end="1" start="0" type="ARG0">The mechanic</arg>
+          <arg end="3" start="3" type="ARGM-EXT">very</arg>
+          <arg end="13" start="8" type="ARG1">about the extent of the problem</arg>
+          <arg end="15" start="14" type="ARG2">with us</arg>
+        </propbank>
+      </example>
+      <note>Based on google data. Comparison to straightforward.01. No VN or FN classes. Framed by Katie.</note>
+    </roleset>
+  </predicate>
+</frameset>

@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE frameset PUBLIC "-//PB//PropBank Frame v3.4 Transitional//EN" "http://propbank.org/specification/dtds/v3.4/frameset.dtd">
+<frameset>
+  <predicate lemma="back">
+    <roleset id="back.01" name="support">
+      <aliases>
+        <alias pos="n">backing</alias>
+        <alias pos="v">back</alias>
+      </aliases>
+      <roles>
+        <role descr="supporter" f="PAG" n="0">
+          <rolelinks>
+            <rolelink class="Taking_sides" resource="FrameNet" version="1.7">cognizer</rolelink>
+          </rolelinks>
+        </role>
+        <role descr="thing being supported" f="PPT" n="1"/>
+      </roles>
+      <usagenotes>
+        <usage resource="PropBank" version="1.0" inuse="+"/>
+        <usage resource="PropBank" version="2.1.5" inuse="+"/>
+        <usage resource="PropBank" version="3.1" inuse="+"/>
+        <usage resource="PropBank" version="3.4" inuse="+"/>
+        <usage resource="AMR" version="2019" inuse="+"/>
+        <usage resource="PropBank" version="Flickr 1.0" inuse="+"/>
+        </usagenotes>
+      <lexlinks>
+        <lexlink class="Taking_sides" confidence="0.8" resource="FrameNet" src="manual+strict-conv" version="1.7"/>
+        </lexlinks>
+      <example name="back-v: support" src="">
+        <text>... asking him to back a Palestinian bid to joing the committee .</text>
+        <propbank>
+          <rel relloc="4">back</rel>
+          <arg end="2" start="2" type="ARG0">him</arg>
+          <arg end="11" start="5" type="ARG1">a Palestinian bid to joing the committee</arg>
+        </propbank>
+      </example>
+      <example name="back-v: cease support" src="">
+        <text>The big brokerage firms back out of program trading for their own accounts or for clients .</text>
+        <propbank>
+          <rel relloc="4">back</rel>
+          <arg end="3" start="0" type="ARG0">The big brokerage firms</arg>
+          <arg end="8" start="5" type="ARG1">out of program trading</arg>
+          <arg end="15" start="9" type="ARGM-PNC">for their own accounts or for clients</arg>
+        </propbank>
+      </example>
+      <example name="backing-n: cease support, with NP" src="">
+        <text>Eastern Airline 's creditors committee backed off a move to come up with its own alternative proposals to the carrier 's bankruptcy reorganization plans .</text>
+        <propbank>
+          <rel relloc="5">backed</rel>
+          <arg end="4" start="0" type="ARG0">Eastern Airline 's creditors committee</arg>
+          <arg end="23" start="6" type="ARG1">off a move to come up with its own alternative proposals to the carrier 's bankruptcy reorganization plans</arg>
+        </propbank>
+      </example>
+      <example name="backing-n: Both args" src="">
+        <text>Russia 's backing of Kostunica</text>
+        <propbank>
+          <rel relloc="2">backing</rel>
+          <arg end="1" start="0" type="ARG0">Russia 's</arg>
+          <arg end="4" start="3" type="ARG1">of Kostunica</arg>
+        </propbank>
+      </example>
+      <example name="backing-n: Arg 0 only" src="">
+        <text>Congressional backing</text>
+        <propbank>
+          <rel relloc="1">backing</rel>
+          <arg end="0" start="0" type="ARG0">Congressional</arg>
+        </propbank>
+      </example>
+      <note>BACK-V NOTES: Could be interpreted as phrasal 'back_out' also (but I don't like that). Follow Treebank's parsing. (from back.01-v)</note>
+      <note>BACKING-N NOTES: Added due to expansion of Nombank. No VN class. FN class taking_sides. Comparison to 'support'. Framed by Katie. (from backing.01-n)</note>
+    </roleset>
+    <roleset id="back.02" name="move backwards">
+      <aliases>
+        <alias pos="v">back</alias>
+      </aliases>
+      <roles>
+        <role descr="causer of backwards motion" f="PAG" n="0">
+          <rolelinks>
+            <rolelink class="run-51.3.2-2" resource="VerbNet" version="verbnet3.3">agent</rolelink>
+            <rolelink class="run-51.3.2-2" resource="VerbNet" version="verbnet3.4">agent</rolelink>
+          </rolelinks>
+        </role>
+        <role descr="entity in motion" f="PPT" n="1">
+          <rolelinks>
+            <rolelink class="run-51.3.2-2" resource="VerbNet" version="verbnet3.3">theme</rolelink>
+            <rolelink class="run-51.3.2-2" resource="VerbNet" version="verbnet3.4">theme</rolelink>
+          </rolelinks>
+        </role>
+      </roles>
+      <usagenotes>
+        <usage resource="PropBank" version="1.0" inuse="+"/>
+        <usage resource="PropBank" version="2.1.5" inuse="+"/>
+        <usage resource="PropBank" version="3.1" inuse="+"/>
+        <usage resource="PropBank" version="3.4" inuse="+"/>
+        <usage resource="AMR" version="2019" inuse="+"/>
+        <usage resource="PropBank" version="Flickr 1.0" inuse="+"/>
+        </usagenotes>
+      <lexlinks>
+        <lexlink class="run-51.3.2-2" confidence="1.0" resource="VerbNet" src="manualchecks" version="verbnet3.4"/>
+      </lexlinks>
+      <example name="back-v: retreat" src="">
+        <text>The Soviets might back away from the current conciliatory attitude</text>
+        <propbank>
+          <rel relloc="3">back</rel>
+          <arg end="1" start="0" type="ARG1">The Soviets</arg>
+          <arg end="2" start="2" type="ARGM-MOD">might</arg>
+          <arg end="9" start="4" type="ARGM-DIR">away from the current conciliatory attitude</arg>
+        </propbank>
+      </example>
+      <note>BACK-V NOTES: Could be interpreted as phrasal "back_away" also. Follow the parsing given by Treebank. (from back.02-v)</note>
+    </roleset>
+    <roleset id="back.03" name="face backwards">
+      <aliases>
+        <alias pos="v">back</alias>
+        <alias pos="j">back</alias>
+      </aliases>
+      <roles>
+        <role descr="looker, facer" f="PAG" n="0"/>
+        <role descr="looked at, faced" f="GOL" n="1"/>
+      </roles>
+      <usagenotes>
+        <usage resource="PropBank" version="1.0" inuse="+"/>
+        <usage resource="PropBank" version="2.1.5" inuse="+"/>
+        <usage resource="PropBank" version="3.1" inuse="+"/>
+        <usage resource="PropBank" version="3.4" inuse="+"/>
+        <usage resource="AMR" version="2019" inuse="+"/>
+        <usage resource="PropBank" version="Flickr 1.0" inuse="+"/>
+        </usagenotes>
+      <lexlinks/>
+      <example name="back-v: with PP" src="">
+        <text>John 's house backs onto the city dump .</text>
+        <propbank>
+          <rel relloc="3">backs</rel>
+          <arg end="2" start="0" type="ARG0">John 's house</arg>
+          <arg end="7" start="4" type="ARG1">onto the city dump</arg>
+        </propbank>
+      </example>
+      <note>BACK-V NOTES: Frames file for 'back' based on survey of initial sentences of big corpus and comparison with 'face' and 'support' (from back.03-v predicate notes)</note>
+      <note>BACK-J NOTES: Automatically created by Julia as an alias file for unification. (from back.03-j)</note>
+    </roleset>
+    </predicate>
+  <predicate lemma="back_up">
+    <roleset id="back_up.04" name="back up: support">
+      <aliases>
+        <alias pos="v">back_up</alias>
+      </aliases>
+      <roles>
+        <role descr="supporter" f="PAG" n="0"/>
+        <role descr="thing being supported" f="PPT" n="1"/>
+      </roles>
+      <usagenotes>
+        <usage resource="PropBank" version="1.0" inuse="-"/>
+        <usage resource="PropBank" version="2.1.5" inuse="-"/>
+        <usage resource="PropBank" version="3.1" inuse="+"/>
+        <usage resource="PropBank" version="3.4" inuse="+"/>
+        <usage resource="AMR" version="2019" inuse="+"/>
+        <usage resource="PropBank" version="Flickr 1.0" inuse="+"/>
+        </usagenotes>
+      <lexlinks>
+        </lexlinks>
+      <example name="back_up-v: Reaganomics" src="">
+        <text>You should quote Mr. Reagan , the man who believed trees cause air pollution , to back up your position that economics is more important than the Earth .</text>
+        <propbank>
+          <rel relloc="16 17">back up</rel>
+          <arg end="0" start="0" type="ARG0">You</arg>
+          <arg end="27" start="18" type="ARG1">your position that economics is more important than the Earth</arg>
+        </propbank>
+      </example>
+      <note>BACK_UP-V NOTES: (from back.04-v)</note>
+    </roleset>
+    <roleset id="back_up.06" name="back up: move backwards">
+      <aliases>
+        <alias pos="v">back_up</alias>
+      </aliases>
+      <roles>
+        <role descr="causer of backwards motion" f="PAG" n="0">
+          <rolelinks>
+            <rolelink class="run-51.3.2-2" resource="VerbNet" version="verbnet3.3">agent</rolelink>
+          </rolelinks>
+        </role>
+        <role descr="entity in motion" f="PPT" n="1">
+          <rolelinks>
+            <rolelink class="run-51.3.2-2" resource="VerbNet" version="verbnet3.3">theme</rolelink>
+          </rolelinks>
+        </role>
+      </roles>
+      <usagenotes>
+        <usage resource="PropBank" version="1.0" inuse="-"/>
+        <usage resource="PropBank" version="2.1.5" inuse="-"/>
+        <usage resource="PropBank" version="3.1" inuse="+"/>
+        <usage resource="PropBank" version="3.4" inuse="+"/>
+        <usage resource="AMR" version="2019" inuse="+"/>
+        <usage resource="PropBank" version="Flickr 1.0" inuse="+"/>
+        </usagenotes>
+      <lexlinks/>
+      <example name="back_up-v: ARG1" src="ontonotes wb/c2e/00/c2e_0015">
+        <text>" Rocks were moved onto the road , and several dozen peasants stood in the middle of the road , several hundred cars were backed up , and rocks were thrown at the police .... "</text>
+        <propbank>
+          <rel relloc="24 25">backed up</rel>
+          <arg end="22" start="20" type="ARG1">several hundred cars</arg>
+        </propbank>
+      </example>
+      <example name="back_up-v: ARG0 and ARG1" src="probably COCA (2018 example fix)">
+        <text>Someone backed up their car in order to hit me</text>
+        <propbank>
+          <rel relloc="1 2">backed up</rel>
+          <arg end="0" start="0" type="ARG0">Someone</arg>
+          <arg end="4" start="3" type="ARG1">their car</arg>
+          <arg end="9" start="5" type="ARGM-PRP">in order to hit me</arg>
+        </propbank>
+      </example>
+      <note>BACK_UP-V NOTES: (from back.06-v)</note>
+    </roleset>
+    <roleset id="back_up.08" name="back up: face backwards">
+      <aliases>
+        <alias pos="v">back_up</alias>
+      </aliases>
+      <roles>
+        <role descr="looker, facer" f="PAG" n="0"/>
+        <role descr="looked at, faced" f="GOL" n="1"/>
+      </roles>
+      <usagenotes>
+        <usage resource="PropBank" version="1.0" inuse="-"/>
+        <usage resource="PropBank" version="2.1.5" inuse="-"/>
+        <usage resource="PropBank" version="3.1" inuse="+"/>
+        <usage resource="PropBank" version="3.4" inuse="+"/>
+        <usage resource="AMR" version="2019" inuse="+"/>
+        <usage resource="PropBank" version="Flickr 1.0" inuse="+"/>
+        </usagenotes>
+      <lexlinks/>
+      <example name="back_up-v: ARG1 and ARG0" src="ontonotes nw/wsj/14/wsj_1424">
+        <text>That strip of concrete is backed up by a few one - story , air - conditioned shacks where a handful of American nationals -- buttressed by imported food , cold soft drinks and back issues of Sports Illustrated -- maintain radio contact with the outside world .</text>
+        <propbank>
+          <rel relloc="5">backed</rel>
+          <arg end="3" start="0" type="ARG1">That strip of concrete</arg>
+          <arg end="46" start="7" type="ARG0">by a few one - story , air - conditioned shacks where a handful of American nationals -- buttressed by imported food , cold soft drinks and back issues of Sports Illustrated -- maintain radio contact with the outside world</arg>
+        </propbank>
+      </example>
+      <note>BACK_UP-V NOTES: (from back.08-v)</note>
+    </roleset>
+    <roleset id="back_up.09" name="back up: preserve data">
+      <aliases>
+        <alias pos="v">back_up</alias>
+      </aliases>
+      <roles>
+        <role descr="preserver, agent" f="PAG" n="0"/>
+        <role descr="data" f="PPT" n="1"/>
+        <role descr="permanent storage device" f="GOL" n="2"/>
+      </roles>
+      <usagenotes>
+        <usage resource="PropBank" version="1.0" inuse="-"/>
+        <usage resource="PropBank" version="2.1.5" inuse="-"/>
+        <usage resource="PropBank" version="3.1" inuse="+"/>
+        <usage resource="PropBank" version="3.4" inuse="+"/>
+        <usage resource="AMR" version="2019" inuse="+"/>
+        <usage resource="PropBank" version="Flickr 1.0" inuse="+"/>
+        </usagenotes>
+      <example name="back_up-v: instrumental subject" src="">
+        <text>Exabyte Corp. , a Boulder , Colo. , maker of high - capacity tape cartridge used to back up computer disk drives , started OTC trading with the symbol EXBT .</text>
+        <propbank>
+          <rel relloc="17 18">back up</rel>
+          <arg end="14" start="10" type="ARG2">high - capacity tape cartridge</arg>
+          <arg end="21" start="19" type="ARG1">computer disk drives</arg>
+        </propbank>
+      </example>
+      <note>BACK_UP-V NOTES: (from back.09-v)</note>
+    </roleset>
+    <roleset id="back_up.10" name="back up: traffic">
+      <aliases>
+        <alias pos="v">back_up</alias>
+      </aliases>
+      <roles>
+        <role descr="traffic" f="PPT" n="1"/>
+      </roles>
+      <usagenotes>
+        <usage resource="PropBank" version="1.0" inuse="-"/>
+        <usage resource="PropBank" version="2.1.5" inuse="-"/>
+        <usage resource="PropBank" version="3.1" inuse="+"/>
+        <usage resource="PropBank" version="3.4" inuse="+"/>
+        <usage resource="AMR" version="2019" inuse="+"/>
+        <usage resource="PropBank" version="Flickr 1.0" inuse="+"/>
+        </usagenotes>
+      <lexlinks/>
+      <example name="back_up-v: Schuylkill expressway" src="">
+        <text>The companies block traffic much as highway on - ramps are blocked when traffic backs up .</text>
+        <propbank>
+          <rel relloc="14 15">backs up</rel>
+          <arg end="13" start="13" type="ARG1">traffic</arg>
+        </propbank>
+      </example>
+      <note>BACK_UP-V NOTES: (from back.10-v)</note>
+    </roleset>
+  </predicate>
+  <predicate lemma="back_off">
+    <roleset id="back_off.11" name="back off: to retreat from">
+      <aliases>
+        <alias pos="v">back_off</alias>
+      </aliases>
+      <roles>
+        <role descr="retreator" f="PAG" n="0">
+          <rolelinks>
+            <rolelink class="withdraw-82-2" resource="VerbNet" version="verbnet3.3">agent</rolelink>
+            <rolelink class="withdraw-82-2" resource="VerbNet" version="verbnet3.4">agent</rolelink>
+          </rolelinks>
+        </role>
+        <role descr="location or thing retreating from" f="LOC" n="1">
+          <rolelinks>
+            <rolelink class="withdraw-82-2" resource="VerbNet" version="verbnet3.3">source</rolelink>
+            <rolelink class="withdraw-82-2" resource="VerbNet" version="verbnet3.4">source</rolelink>
+          </rolelinks>
+        </role>
+      </roles>
+      <usagenotes>
+        <usage resource="PropBank" version="1.0" inuse="-"/>
+        <usage resource="PropBank" version="2.1.5" inuse="-"/>
+        <usage resource="PropBank" version="3.1" inuse="+"/>
+        <usage resource="PropBank" version="3.4" inuse="+"/>
+        <usage resource="AMR" version="2019" inuse="+"/>
+        <usage resource="PropBank" version="Flickr 1.0" inuse="+"/>
+        </usagenotes>
+      <lexlinks>
+        <lexlink class="Departing" confidence="0.8" resource="FrameNet" src="manual+strict-conv" version="1.7"/>
+        <lexlink class="withdraw-82-2" confidence="1.0" resource="VerbNet" src="manualchecks" version="verbnet3.4"/>
+      </lexlinks>
+      <example name="back_off-v: intransitive" src="">
+        <text>When his arm came up [ ] I ducked away but it caught me on the side of the neck , watering my eyes , and I backed off to cough .</text>
+        <propbank>
+          <rel relloc="27 28">backed off</rel>
+          <arg end="26" start="26" type="ARG0">I</arg>
+          <arg end="30" start="29" type="ARGM-PNC">to cough</arg>
+        </propbank>
+      </example>
+      <note>BACK_OFF-V NOTES: (from back.11-v)</note>
+    </roleset>
+  </predicate>
+  </frameset>

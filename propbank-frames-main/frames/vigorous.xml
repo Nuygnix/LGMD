@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE frameset PUBLIC "-//PB//PropBank Frame v3.4 Transitional//EN" "http://propbank.org/specification/dtds/v3.4/frameset.dtd">
+<frameset>
+  <predicate lemma="vigorous">
+    <roleset id="vigorous.01" name="strong, full of life">
+      <aliases>
+        <alias pos="j">vigorous</alias>
+      </aliases>
+      <roles>
+        <role descr="strong entity" f="PAG" n="1"/>
+      </roles>
+      <usagenotes>
+        <usage resource="PropBank" version="1.0" inuse="-"/>
+        <usage resource="PropBank" version="2.1.5" inuse="-"/>
+        <usage resource="PropBank" version="3.1" inuse="+"/>
+        <usage resource="PropBank" version="3.4" inuse="+"/>
+        <usage resource="AMR" version="2019" inuse="-"/>
+        <usage resource="PropBank" version="Flickr 1.0" inuse="+"/>
+        </usagenotes>
+      <lexlinks/>
+      <example name="with CXN" src="medi-Tmprl">
+        <text>Patient was vigorous enough to travel to Hong Kong last month .</text>
+        <propbank>
+          <rel relloc="2">vigorous</rel>
+          <arg type="ARG1" start="0" end="0">Patient</arg>
+          <arg type="ARGM-CXN" start="3" end="10">enough to travel to Hong Kong last month</arg>
+        </propbank>
+      </example>
+      <note>VIGOROUS-J NOTES: Added by Julia based on Medi-Tmprl1to8. Relation to 'invigorate.01'. (from vigorous.01-j)</note>
+    </roleset>
+  </predicate>
+</frameset>
