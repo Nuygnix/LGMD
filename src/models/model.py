@@ -29,28 +29,30 @@ class AMRModel(nn.Module):
             self.node_encoder = BertModel.from_pretrained(args.plm_path)
             # TODO: 加个Linear
             self.node_init_pool_layer = create_pool_layer("attention", self.bert_config.hidden_size)
-            self.conv1 = RGATConv(in_channels=self.bert_config.hidden_size,
+            self.local_conv1 = RGATConv(in_channels=self.bert_config.hidden_size,
                                 out_channels=args.node_hidden_size1,
                                 num_relations=args.num_relations,
                                 num_bases=30, dropout=0.05)
-            self.conv2 = RGATConv(in_channels=args.node_hidden_size1,
+            self.local_conv2 = RGATConv(in_channels=args.node_hidden_size1,
                                 out_channels=args.node_hidden_size2,
                                 num_relations=args.num_relations,
                                 num_bases=30, dropout=0.05)
 
-            # # TODO: 加个Linear
-            # self.node_fc1 = nn.Linear(self.bert_config.hidden_size, args.node_hidden_size)
-            # # TODO: 加个Dropout
-            # self.node_init_pool_layer = create_pool_layer("attention", self.bert_config.hidden_size)
-            # self.conv_layers = []
-            # for _ in range(args.num_node_gnn_layer):
-            #     self.conv_layers.append(RGCNConv(in_channels=args.node_hidden_size,
-            #                     out_channels=args.node_hidden_size,
-            #                     num_relations=args.num_relations,
-            #                     num_bases=30))
-            
             # TODO: Attention Pooling / get root features
-            in_dim += args.node_hidden_size
+            in_dim += args.node_hidden_size2
+        
+        if args.with_global:
+            self.global_conv1 = RGATConv(in_channels=in_dim, out_channels=args.global_hidden_size,
+                                num_relations=args.num_global_relations, num_bases=30, dropout=0.05)
+            self.global_conv2 = RGATConv(in_channels=args.global_hidden_size, out_channels=args.global_hidden_size,
+                                num_relations=args.num_global_relations, num_bases=30, dropout=0.05)
+            # self.global_conv_layers = [RGATConv(in_channels=in_dim, out_channels=args.global_hidden_size,
+            #                     num_relations=args.num_global_relations, num_bases=30, dropout=0.05)]
+            # for _ in range(args.num_gloabl_layers - 1):
+            #     self.global_conv_layers += [RGATConv(in_channels=args.global_hidden_size, out_channels=args.global_hidden_size,
+            #                     num_relations=args.num_global_relations, num_bases=30, dropout=0.05)]
+            
+            in_dim += args.global_hidden_size
         
         # classifier
         layers = [nn.Linear(in_dim, args.clf_hidden_size), nn.ReLU()]
@@ -98,12 +100,8 @@ class AMRModel(nn.Module):
             outputs = self.node_encoder(all_node_input_ids, all_attention_mask)
             node_init_features = self.node_init_pool_layer(outputs.last_hidden_state, all_attention_mask)    # [total_num_nodes, hidden_size]
             
-            node_features = self.conv1(node_init_features, all_edge_index, all_edge_type)
-            node_features = self.conv2(node_features, all_edge_index, all_edge_type)
-
-            # node_features = self.node_fc1(node_init_features)
-            # for i in range(self.args.num_node_gnn_layer):
-            #     node_features = self.conv_layers[i](node_features, all_edge_index, all_edge_type)
+            node_features = self.local_conv1(node_init_features, all_edge_index, all_edge_type)
+            node_features = self.local_conv2(node_features, all_edge_index, all_edge_type)
 
             # TODO: 过GNN之前和之后的可以一起用，残差连接 / concat
             # node_features = torch.cat([node_features, node_init_features], dim=1)
@@ -119,11 +117,28 @@ class AMRModel(nn.Module):
                 for j in range(kwargs['num_turns'][i]):
                     start = node_starts[i * max_turns + j].item()
                     end = node_ends[i * max_turns + j].item()
-                        # TODO: 可以改成自注意力聚合
+                    # TODO: 当前是话语中所有节点特征 平均池化，可以改成注意力池化
                     utterance_feat = node_features[start: end].mean(dim=0)
                     inner_features[idx] = utterance_feat
                     idx += 1
             final_features.append(inner_features)
+        
+
+        if self.args.with_global:
+            global_features = torch.cat(final_features, dim=1)
+            edge_index, edge_type = self.batch_graphify(
+                kwargs['num_turns'], kwargs['num_disc_edges'], kwargs['disc_edge_index'], kwargs['disc_edge_types'])
+            # print("----------------------------")
+            # print(global_features.device)
+            # print(edge_index.device)
+            # print(edge_type.device)
+            # print("----------------------------")
+            global_features = self.global_conv1(global_features, edge_index, edge_type)
+            global_features = self.global_conv2(global_features, edge_index, edge_type)
+            # for layer in self.global_conv_layers:
+            #     global_features = layer(global_features, edge_index, edge_type)
+            
+            final_features.append(global_features)
 
 
         final_features = torch.cat(final_features, dim=1)
@@ -136,8 +151,6 @@ class AMRModel(nn.Module):
             loss = loss_fn(logits, valid_labels)
         return (logits, valid_labels), loss
         
-        # # edge_index [2, num_edges]
-        # # edge_type [num_edges]
 
     def batch_graphify_inner(self, num_nodes, node_input_ids, node_attention_mask,
                              num_edges, edge_index, edge_types):
@@ -189,40 +202,64 @@ class AMRModel(nn.Module):
         all_edge_type = torch.cat(all_edge_type, dim=0)  # [total_num_edges]
         return all_node_input_ids, all_attention_mask, all_edge_index, all_edge_type
 
-    def batch_graphify(self, ):
+    def batch_graphify(self, num_turns, num_edges, edge_index, edge_types):
         # 把batch内所有话语，构成一张大图
-        pass
+
+        bsz = num_turns.shape[0]
+        # 计算每个对话在全局图中的节点偏移量
+        cumulative_nodes = torch.cumsum(torch.cat([torch.tensor([0]).to(num_turns.device), num_turns[:-1]]), dim=0)
+
+        all_edge_index = []
+        all_edge_type = []
+
+        for i in range(bsz):
+            all_edge_index.append(edge_index[i][:num_edges[i]] + cumulative_nodes[i])
+            all_edge_type.append(edge_types[i][:num_edges[i]])
+
+        all_edge_index = torch.cat(all_edge_index, dim=0).t().contiguous() # [2, total_num_edges]
+        all_edge_type = torch.cat(all_edge_type, dim=0) # [total_num_edges]
+        return all_edge_index, all_edge_type
 
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="The arguments of Conversation")
+# if __name__ == '__main__':
+#     parser = argparse.ArgumentParser(description="The arguments of Conversation")
 
-    parser.add_argument("--plm_path", type=str, default="/public/home/zhouxiabing/data/kywang/plms/bert-base-uncased")
-    parser.add_argument("--node_hidden_size1", type=int, default=200)
-    parser.add_argument("--node_hidden_size2", type=int, default=200)
-    parser.add_argument("--clf_hidden_size", type=int, default=100)
-    parser.add_argument("--num_clf_layers", type=int, default=1)
-    parser.add_argument("--num_relations", type=int, default=116)
+#     parser.add_argument("--plm_path", type=str, default="/public/home/zhouxiabing/data/kywang/plms/bert-base-uncased")
+#     parser.add_argument("--node_hidden_size1", type=int, default=200)
+#     parser.add_argument("--node_hidden_size2", type=int, default=200)
+#     parser.add_argument("--num_relations", type=int, default=116)
 
-    parser.add_argument("--with_inner_syntax", action='store_true')
+#     parser.add_argument("--clf_hidden_size", type=int, default=100)
+#     parser.add_argument("--num_clf_layers", type=int, default=1)
+
+#     parser.add_argument("--num_global_relations", type=int, default=16)
+#     parser.add_argument("--num_gloabl_layers", type=int, default=2)    
+#     parser.add_argument("--global_hidden_size", type=int, default=200)
+
+#     parser.add_argument("--with_inner_syntax", action='store_true')
+#     parser.add_argument("--with_global", action='store_true')
 
 
-    args = parser.parse_args()
+#     args = parser.parse_args()
 
-    tokenizer = BertTokenizer.from_pretrained(args.plm_path)
-    dataset_path = "/public/home/zhouxiabing/data/kywang/AMR_MD/data/final/test_mdrdc.jsonl"
-    dataset = AMRDataset(dataset_path, tokenizer, 256, 12)
-    dataloader = DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=dataset.collate_fn)
+#     import logging
+#     logger = logging.getLogger(__name__)
 
-    device = 'cuda'
-    model = AMRModel(args, 18)
-    model.to(device)
+#     tokenizer = BertTokenizer.from_pretrained(args.plm_path)
+#     dataset_dir = "/public/home/zhouxiabing/data/kywang/AMR_MD/data/final"
+#     dataset = AMRDataset(dataset_dir, tokenizer, 128, 12, 'dev', logger)
 
-    for batch in dataloader:
-        for k, v in batch.items():
-            batch[k] = v.to(device)
-        logits, loss = model(**batch)
+#     dataloader = DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=dataset.collate_fn)
+
+#     device = 'cpu'
+#     model = AMRModel(args, 18)
+#     model.to(device)
+
+#     for batch in dataloader:
+#         for k, v in batch.items():
+#             batch[k] = v.to(device)
+#         logits, loss = model(**batch)
 
 
 

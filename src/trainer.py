@@ -134,14 +134,21 @@ class Trainer:
                         self.logger.info(f"At epoch {epoch} and train step {effective_step} Train Loss: {train_loss_dict}")
                         train_loss_dict = {}
                     
-                    # 验证
-                    if effective_step % self.args.eval_steps == 0:
+                    # 以step为单位验证
+                    if self.args.eval_steps != -1 and effective_step % self.args.eval_steps == 0:
                         self.logger.info(f"At epoch {epoch} and train steps {effective_step}, dev results:")
                         dev_result = self.eval(dev_dataloader, do_save=False)
                         if self.early_stopping:
                             self.early_stopping.update(effective_step, dev_result['macro_f1'], self.model)
                             if self.early_stopping.stop_training:
                                 break
+            # 以epoch为单位验证
+            if self.args.eval_steps == -1:
+                self.logger.info(f"At epoch {epoch} and train steps {effective_step}, dev results:")
+                dev_result = self.eval(dev_dataloader, do_save=False)
+                if self.early_stopping:
+                    self.early_stopping.update(epoch, dev_result['macro_f1'], self.model)
+
             if self.early_stopping and self.early_stopping.stop_training:
                 break
 

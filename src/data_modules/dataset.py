@@ -15,7 +15,8 @@ class AMRDataset(Dataset):
         total_utterances = sum([len(item) for item in self.df['turn']])
         logger.info(f"total number of utterance:\t {total_utterances}")
 
-        edge_types = pd.read_csv("/public/home/zhouxiabing/data/kywang/AMR_MD/data/final/edge_types.csv")
+        #  话语内部amr边的类型转id
+        edge_types = pd.read_csv("/public/home/zhouxiabing/data/kywang/AMR_MD/data/final/edge_types_amr.csv")
         edge_types = edge_types['edge_types'].to_list()
         self.edge_type2id = {}
         for i, edge_type in enumerate(edge_types):
@@ -23,6 +24,17 @@ class AMRDataset(Dataset):
 
         self.df['edge_type'] = self.df['edge_type'].apply(
             lambda x: [[self.edge_type2id[item] for item in edges] for edges in x]
+        )
+
+        # 话语之间的语篇关系转id
+        disc_edge_types = pd.read_csv("/public/home/zhouxiabing/data/kywang/AMR_MD/data/final/edge_types_ddp.csv")
+        disc_edge_types = disc_edge_types['edge_types'].to_list()
+        self.disc_edge_type2id = {}
+        for i, edge_type in enumerate(disc_edge_types):
+            self.disc_edge_type2id[edge_type] = i
+
+        self.df['disc_edge_types'] = self.df['disc_edge_types'].apply(
+            lambda x: [self.disc_edge_type2id[item] for item in x]
         )
 
         self.max_seq_len = max_seq_len
@@ -61,6 +73,12 @@ class AMRDataset(Dataset):
         num_edges = torch.zeros(bsz, max_turns, dtype=torch.int64)
         edge_index = torch.full((bsz, max_turns, max_num_edges, 2), -1, dtype=torch.int64)
         edge_types = torch.full((bsz, max_turns, max_num_edges), -1, dtype=torch.int64)
+
+        # 话语之间的语篇关系
+        max_disc_num_edges = max([len(dialogue['disc_edge_types']) for dialogue in data])
+        num_disc_edges = torch.zeros(bsz, dtype=torch.int64)
+        disc_edge_index = torch.full((bsz, max_disc_num_edges, 2), -1, dtype=torch.int64)
+        disc_edge_types = torch.full((bsz, max_disc_num_edges), -1, dtype=torch.int64)
         for i in range(bsz):
             # 话语原始信息
             tokenized_text = self.tokenizer(data[i]['clean_text'], max_length=self.max_seq_len, padding='max_length', truncation=True,
@@ -101,6 +119,19 @@ class AMRDataset(Dataset):
                     edge_index[i, j, :cnt, :] = edge_data
                 # edge_index[i, j, :cnt, :] = torch.tensor(data[i]['edge_index'][j], dtype=torch.int64)
                 edge_types[i, j, :cnt] = torch.tensor(data[i]['edge_type'][j], dtype=torch.int64)
+
+            # 话语之间的语篇关系
+            cur_disc_edges = len(data[i]['disc_edge_types'])
+            num_disc_edges[i] = cur_disc_edges
+            disc_edge_index[i, :cur_disc_edges, :] = torch.tensor(data[i]['disc_edge_index'], dtype=torch.int64)
+            disc_edge_types[i, :cur_disc_edges] = torch.tensor(data[i]['disc_edge_types'], dtype=torch.int64)
+        
+        """
+        num_disc_edges:    [bsz, ]
+        disc_edge_index:   [bsz, max_turns, 2]
+        disc_edge_types:   [bsz, max_turns]
+        """
+
         return {
             'input_ids': input_ids,
             'attention_mask': attention_mask,
@@ -111,17 +142,23 @@ class AMRDataset(Dataset):
             'node_attention_mask': node_attention_mask,
             'num_edges': num_edges,
             'edge_index': edge_index,
-            'edge_types': edge_types
+            'edge_types': edge_types,
+            'num_disc_edges': num_disc_edges,
+            'disc_edge_index': disc_edge_index,
+            'disc_edge_types': disc_edge_types
         }
 
 
 if __name__ == '__main__':
     tokenizer = BertTokenizer.from_pretrained("/public/home/zhouxiabing/data/kywang/plms/bert-base-uncased")
     dataset_dir = "/public/home/zhouxiabing/data/kywang/AMR_MD/data/final"
-    dataset = AMRDataset(dataset_dir, tokenizer, 512, 12, 'dev')
+    
+    import logging
+    logger = logging.getLogger(__name__)
+    dataset = AMRDataset(dataset_dir, tokenizer, 128, 12, 'dev', logger)
 
     dataloader = DataLoader(dataset, batch_size=8, shuffle=True, collate_fn=dataset.collate_fn)
 
-    # for batch in dataloader:
-    #     breakpoint()
+    for batch in dataloader:
+        breakpoint()
 

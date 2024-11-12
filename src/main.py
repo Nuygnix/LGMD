@@ -9,6 +9,8 @@ from callback.earlystopping import EarlyStopping
 import time
 import torch
 import logging
+import os
+import json
 
 
 def run_train(args):
@@ -16,6 +18,8 @@ def run_train(args):
     model_type = "bert"
     if args.with_inner_syntax:
         model_type += "_amr"
+    if args.with_global:
+        model_type += "_disc"
     logger = config_logging("train", f"{args.log_dir}/train/{args.seed}_{model_type}-{now_time}.log",
                    logging.INFO, logging.DEBUG)
     print_config(args, logger)
@@ -33,8 +37,16 @@ def run_train(args):
     dev_dataloader = get_dataloader(tokenizer, args.dataset_dir, 'dev',
                     args.eval_batch_size, args.max_seq_len, args.max_node_len, logger)
     # train
-    early_stopping = EarlyStopping(f"{args.ckpt_dir}/{args.seed}_{model_type}-{now_time}",
-                    patience=args.patience, mode='max', max_to_save=args.max_to_save)
+    ckpt_dir = f"{args.ckpt_dir}/{args.seed}_{model_type}-{now_time}"
+    early_stopping = EarlyStopping(ckpt_dir, patience=args.patience, mode='max', max_to_save=args.max_to_save)
+    
+    # save configuration
+    os.makedirs(ckpt_dir)
+    args_dict = vars(args)
+    with open(f'{ckpt_dir}/args.json', 'w') as f:
+        json.dump(args_dict, f, indent=4)
+    
+    # train
     trainer = Trainer(model, tokenizer, args, logger, early_stopping=early_stopping)
     trainer.train(train_dataloader, dev_dataloader)
 
@@ -60,6 +72,8 @@ def run_test(args):
     trainer = Trainer(model, tokenizer, args, logger)
     if os.path.isdir(args.ckpt_dir):
         for model_name in os.listdir(args.ckpt_dir):
+            if '.json' in model_name:
+                continue
             checkpoint = torch.load(os.path.join(args.ckpt_dir, model_name))
             model.load_state_dict(checkpoint['state_dict'])
             logger.info(f"Load model state dict from {args.ckpt_dir}/{model_name}")
@@ -80,17 +94,23 @@ if __name__ == "__main__":
 
     # model type
     parser.add_argument("--with_inner_syntax", action='store_true')
+    parser.add_argument("--with_global", action='store_true')
 
     # amr
+    parser.add_argument("--num_relations", type=int, default=116) # TODO: 搞个关系列表，自动算
     parser.add_argument("--node_hidden_size1", type=int, default=200)
     parser.add_argument("--node_hidden_size2", type=int, default=200)
     parser.add_argument("--node_hidden_size", type=int, default=200)
     parser.add_argument("--num_node_gnn_layer", type=int, default=1)
 
+    # discourse
+    parser.add_argument("--num_global_relations", type=int, default=16)
+    parser.add_argument("--num_gloabl_layers", type=int, default=2)    
+    parser.add_argument("--global_hidden_size", type=int, default=200)
+
     # clf
     parser.add_argument("--clf_hidden_size", type=int, default=300)
     parser.add_argument("--num_clf_layers", type=int, default=1)
-    parser.add_argument("--num_relations", type=int, default=116) # TODO: 搞个关系列表，自动算
 
     # model dir
     parser.add_argument("--plm_path", type=str, default="/public/home/zhouxiabing/data/kywang/plms/bert-base-uncased")
