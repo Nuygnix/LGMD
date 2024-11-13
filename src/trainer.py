@@ -100,7 +100,7 @@ class Trainer:
                 loss_dict[key] = value.item() if hasattr(value, 'item') else value
         return loss_dict
 
-    def train(self, train_dataloader, dev_dataloader):
+    def train(self, train_dataloader, dev_dataloader, test_dataloader=None):
         self.set_scheduler(train_dataloader)
         self.print_basic_info(train_dataloader, dev_dataloader)
 
@@ -136,23 +136,32 @@ class Trainer:
                     
                     # 以step为单位验证
                     if self.args.eval_steps != -1 and effective_step % self.args.eval_steps == 0:
-                        self.logger.info(f"At epoch {epoch} and train steps {effective_step}, dev results:")
-                        dev_result = self.eval(dev_dataloader, do_save=False)
-                        if self.early_stopping:
-                            self.early_stopping.update(effective_step, dev_result['macro_f1'], self.model)
-                            if self.early_stopping.stop_training:
-                                break
+                        self.eval_and_update_model(epoch, effective_step, dev_dataloader, test_dataloader)
+                        if self.early_stopping and self.early_stopping.stop_training:
+                            break
             # 以epoch为单位验证
             if self.args.eval_steps == -1:
-                self.logger.info(f"At epoch {epoch} and train steps {effective_step}, dev results:")
-                dev_result = self.eval(dev_dataloader, do_save=False)
-                if self.early_stopping:
-                    self.early_stopping.update(epoch, dev_result['macro_f1'], self.model)
+                self.eval_and_update_model(epoch, effective_step, dev_dataloader, test_dataloader)
 
             if self.early_stopping and self.early_stopping.stop_training:
                 break
 
-    def eval(self, data_loader, do_save=False):
+    def eval_and_update_model(self, epoch, step, dev_dataloader, test_dataloader):
+        self.logger.info(f"At epoch {epoch} and train steps {step}")
+        self.logger.info("dev results:")
+        dev_result = self.eval(dev_dataloader, do_save=False, show_reslut=False)
+
+        test_score = None
+        if test_dataloader is not None:
+            self.logger.info("test results:")
+            test_result = self.eval(test_dataloader, do_save=False, show_reslut=False)
+            test_score = test_result['macro_f1']
+
+        if self.early_stopping:
+            self.early_stopping.update(step, dev_result['macro_f1'], self.model, test_score)
+
+
+    def eval(self, data_loader, do_save=False, show_reslut=True):
         self.model.eval()
         self.logger.info(f"Eval ... ")
         id2label = data_loader.dataset.id2label
@@ -174,7 +183,7 @@ class Trainer:
 
                 if do_save:
                     all_input_ids.append(batch['input_ids'].cpu().detach())
-                if i == 0:
+                if show_reslut and i == 0:
                     # 浅浅展示一下分类结果
                     input_ids_flat = batch['input_ids'].view(-1, self.args.max_seq_len)
                     bsz, max_turns, _ = batch['input_ids'].shape

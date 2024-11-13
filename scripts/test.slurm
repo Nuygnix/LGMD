@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J AMR
+#SBATCH -J LGMD
 #SBATCH -p batch
 #SBATCH -N 1
 #SBATCH --gres=gpu:1
@@ -12,14 +12,4 @@ export CUDA_LAUNCH_BLOCKING=1
 
 python $proj_dir/src/main.py  \
 --do_test \
---plm_path /public/home/zhouxiabing/data/kywang/plms/bert-base-uncased \
---ckpt_dir /public/home/zhouxiabing/data/kywang/AMR_MD/ckpts/42_bert-2024-11-10-16:31:46 \
---train_batch_size 4 \
---eval_batch_size 8 \
---max_seq_len 128 \
---max_node_len 16 \
---seed 42 \
---node_hidden_size1 300 \
---node_hidden_size2 300 \
---node_hidden_size 300
-
+--ckpt_dir /public/home/zhouxiabing/data/kywang/AMR_MD/ckpts/2024_bert-2024-11-13-13:55:20

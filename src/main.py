@@ -1,6 +1,6 @@
 import os
 import argparse
-from utils.tools import print_config, seed_everything, print_model, config_logging
+from utils.tools import *
 from models.model import AMRModel
 from trainer import Trainer
 from transformers import BertConfig, BertTokenizer
@@ -36,6 +36,8 @@ def run_train(args):
                     args.train_batch_size, args.max_seq_len, args.max_node_len, logger)
     dev_dataloader = get_dataloader(tokenizer, args.dataset_dir, 'dev',
                     args.eval_batch_size, args.max_seq_len, args.max_node_len, logger)
+    test_dataloader = get_dataloader(tokenizer, args.dataset_dir, 'test',
+                    args.eval_batch_size, args.max_seq_len, args.max_node_len, logger)
     # train
     ckpt_dir = f"{args.ckpt_dir}/{args.seed}_{model_type}-{now_time}"
     early_stopping = EarlyStopping(ckpt_dir, patience=args.patience, mode='max', max_to_save=args.max_to_save)
@@ -48,7 +50,7 @@ def run_train(args):
     
     # train
     trainer = Trainer(model, tokenizer, args, logger, early_stopping=early_stopping)
-    trainer.train(train_dataloader, dev_dataloader)
+    trainer.train(train_dataloader, dev_dataloader, test_dataloader)
 
 
 
@@ -70,19 +72,12 @@ def run_test(args):
     print_model(model, logger)
 
     trainer = Trainer(model, tokenizer, args, logger)
-    if os.path.isdir(args.ckpt_dir):
-        for model_name in os.listdir(args.ckpt_dir):
-            if '.json' in model_name:
-                continue
-            checkpoint = torch.load(os.path.join(args.ckpt_dir, model_name))
-            model.load_state_dict(checkpoint['state_dict'])
-            logger.info(f"Load model state dict from {args.ckpt_dir}/{model_name}")
-
-            trainer.eval(test_dataloader, do_save=False)
-    else:
-        checkpoint = torch.load(args.ckpt_dir)
+    for model_name in os.listdir(args.ckpt_dir):
+        if '.json' in model_name:
+            continue
+        checkpoint = torch.load(os.path.join(args.ckpt_dir, model_name))
         model.load_state_dict(checkpoint['state_dict'])
-        logger.info(f"Load model state dict from {args.ckpt_dir}")
+        logger.info(f"Load model state dict from {args.ckpt_dir}/{model_name}")
 
         trainer.eval(test_dataloader, do_save=False)
 
@@ -150,12 +145,20 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=2024)
 
     args = parser.parse_args()
-    seed_everything(args.seed)
 
 
     if args.do_train:
+        seed_everything(args.seed)
         run_train(args)
     elif args.do_test:
+        with open(f"{args.ckpt_dir}/args.json", 'rt') as f:
+            json_dict = json.load(f)
+            json_dict = {k: v for k, v in json_dict.items() if k not in ['do_train', 'do_test', 'ckpt_dir']}
+
+            argparse_dict = vars(args)
+            argparse_dict.update(json_dict)
+
+        seed_everything(args.seed)
         run_test(args)
     
     

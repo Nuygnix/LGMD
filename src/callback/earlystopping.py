@@ -38,11 +38,12 @@ class EarlyStopping:
         self.model_list = []    # 保存最后五次ckpt
         self.max_to_save = max_to_save
 
-    def update(self, step, current_score, model):
+    def update(self, step, current_score, model, test_score=None):
         if self.monitor_op(current_score - self.min_delta, self.best_score):
             logger.info(f"step {step}: improve from {self.best_score:.4f} to {current_score:.4f}")
             self.best_score = current_score
             self.wait = 0
+
             '''Saves model when score improve.'''
             if not os.path.exists(self.ckpt_dir):
                 os.makedirs(self.ckpt_dir)
@@ -51,7 +52,12 @@ class EarlyStopping:
             if len(self.model_list) == self.max_to_save:
                 os.remove(os.path.join(self.ckpt_dir, f"{self.model_list[0]}"))
                 self.model_list.pop(0)
-            model_name = f"model_{step}_{current_score*100:.2f}.tar"
+
+            if test_score is None:
+                model_name = f"model_{step}_{current_score*100:.2f}.tar"
+            else:
+                model_name = f"model_{step}_{current_score*100:.2f}_{test_score*100:.2f}.tar"
+
             self.model_list.append(model_name)
             torch.save({'state_dict': model_to_save.state_dict()}, os.path.join(self.ckpt_dir, model_name))
             

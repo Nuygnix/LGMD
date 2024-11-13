@@ -9,6 +9,7 @@ from data_modules.dataset import AMRDataset
 from torch.utils.data import Dataset, DataLoader
 import argparse
 from models.pooling import create_pool_layer
+from utils.focal_loss import MultiFocalLoss
 
 # BASE_MODEL_MAP
 
@@ -18,6 +19,7 @@ class AMRModel(nn.Module):
     def __init__(self, args, num_labels):
         super().__init__()
         self.args = args
+        self.num_labels = num_labels
         self.bert_config = BertConfig.from_pretrained(args.plm_path)
         self.utterance_encoder = BertModel.from_pretrained(args.plm_path)
         self.utterance_pool_layer = create_pool_layer("cls")
@@ -145,7 +147,8 @@ class AMRModel(nn.Module):
         logits = self.clf(final_features)# [有效样本数, num_classes]
         loss = None
         if 'labels' in kwargs:
-            loss_fn = nn.CrossEntropyLoss()
+            loss_fn = MultiFocalLoss(self.num_labels)
+            # loss_fn = nn.CrossEntropyLoss()
             labels_flat = kwargs['labels'].view(-1)
             valid_labels = labels_flat[valid_mask]  # [有效样本数]
             loss = loss_fn(logits, valid_labels)
