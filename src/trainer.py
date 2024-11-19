@@ -130,7 +130,7 @@ class Trainer:
                     # 打印训练的loss信息
                     if effective_step % self.args.logging_steps == 0:
                         for key, value in train_loss_dict.items():
-                            train_loss_dict[key] = round(value / self.args.logging_steps / self.args.grad_accum_steps, 4)
+                            train_loss_dict[key] = round(value / self.args.logging_steps / self.args.grad_accum_steps, 6)
                         self.logger.info(f"At epoch {epoch} and train step {effective_step} Train Loss: {train_loss_dict}")
                         train_loss_dict = {}
                     
@@ -200,7 +200,7 @@ class Trainer:
 
             # 计算loss
             for key, value in loss_dict.items():
-                loss_dict[key] = round(value / len(data_loader), 4)
+                loss_dict[key] = round(value / len(data_loader), 6)
             self.logger.info(f"dev loss = {loss_dict}")
 
             result = loss_dict

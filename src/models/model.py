@@ -8,7 +8,7 @@ sys.path.append("..")
 from data_modules.dataset import AMRDataset
 from torch.utils.data import Dataset, DataLoader
 import argparse
-from models.pooling import create_pool_layer
+from models.pooling import create_pool_layer, NodeAttentionPooling
 from utils.focal_loss import MultiFocalLoss
 
 # BASE_MODEL_MAP
@@ -16,7 +16,7 @@ from utils.focal_loss import MultiFocalLoss
 
 # Local semantics
 class AMRModel(nn.Module):
-    def __init__(self, args, num_labels):
+    def __init__(self, args, num_labels, alpha=None):
         super().__init__()
         self.args = args
         self.num_labels = num_labels
@@ -41,13 +41,14 @@ class AMRModel(nn.Module):
                                 num_bases=30, dropout=0.05)
 
             # TODO: Attention Pooling / get root features
+            self.node_output_pool_layer = NodeAttentionPooling(args.node_hidden_size2)
             in_dim += args.node_hidden_size2
         
         if args.with_global:
             self.global_conv1 = RGATConv(in_channels=in_dim, out_channels=args.global_hidden_size,
-                                num_relations=args.num_global_relations, num_bases=30, dropout=0.05)
+                                num_relations=args.num_global_relations, num_bases=10, dropout=0.05)
             self.global_conv2 = RGATConv(in_channels=args.global_hidden_size, out_channels=args.global_hidden_size,
-                                num_relations=args.num_global_relations, num_bases=30, dropout=0.05)
+                                num_relations=args.num_global_relations, num_bases=10, dropout=0.05)
             # self.global_conv_layers = [RGATConv(in_channels=in_dim, out_channels=args.global_hidden_size,
             #                     num_relations=args.num_global_relations, num_bases=30, dropout=0.05)]
             # for _ in range(args.num_gloabl_layers - 1):
@@ -63,6 +64,10 @@ class AMRModel(nn.Module):
         layers += [nn.Linear(args.clf_hidden_size, num_labels)]
 
         self.clf = nn.Sequential(*layers)
+
+        # self.loss_fn = nn.CrossEntropyLoss()
+        # self.loss_fn = MultiFocalLoss(self.num_labels)
+        self.loss_fn = MultiFocalLoss(self.num_labels, alpha=alpha)
 
     
     def forward(self, **kwargs):
@@ -119,10 +124,15 @@ class AMRModel(nn.Module):
                 for j in range(kwargs['num_turns'][i]):
                     start = node_starts[i * max_turns + j].item()
                     end = node_ends[i * max_turns + j].item()
-                    # TODO: 当前是话语中所有节点特征 平均池化，可以改成注意力池化
-                    utterance_feat = node_features[start: end].mean(dim=0)
+                    # # 平均池化
+                    # utterance_feat = node_features[start: end].mean(dim=0)
+                    # 注意力池化
+                    # TODO: 当前是话语中所有节点特征 注意力池化池化，可以改成取root
+                    utterance_feat = self.node_output_pool_layer(node_features[start: end])
                     inner_features[idx] = utterance_feat
                     idx += 1
+            assert idx == total_valid_utterances, "话语索引异常错位"
+
             final_features.append(inner_features)
         
 
@@ -147,11 +157,9 @@ class AMRModel(nn.Module):
         logits = self.clf(final_features)# [有效样本数, num_classes]
         loss = None
         if 'labels' in kwargs:
-            loss_fn = MultiFocalLoss(self.num_labels)
-            # loss_fn = nn.CrossEntropyLoss()
             labels_flat = kwargs['labels'].view(-1)
             valid_labels = labels_flat[valid_mask]  # [有效样本数]
-            loss = loss_fn(logits, valid_labels)
+            loss = self.loss_fn(logits, valid_labels)
         return (logits, valid_labels), loss
         
 

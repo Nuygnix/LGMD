@@ -23,13 +23,10 @@ def run_train(args):
     logger = config_logging("train", f"{args.log_dir}/train/{args.seed}_{model_type}-{now_time}.log",
                    logging.INFO, logging.DEBUG)
     print_config(args, logger)
-    # load model and tokenizer
+    # load tokenizer
     logger.info("Initiate Model and Tokenizer...")
 
     tokenizer = BertTokenizer.from_pretrained(args.plm_path)
-
-    model = AMRModel(args, 18)
-    print_model(model, logger)
 
     # load data
     train_dataloader = get_dataloader(tokenizer, args.dataset_dir, 'train',
@@ -38,6 +35,11 @@ def run_train(args):
                     args.eval_batch_size, args.max_seq_len, args.max_node_len, logger)
     test_dataloader = get_dataloader(tokenizer, args.dataset_dir, 'test',
                     args.eval_batch_size, args.max_seq_len, args.max_node_len, logger)
+    
+    # load model
+    model = AMRModel(args, 18, train_dataloader.dataset.alpha)
+    print_model(model, logger)
+
     # train
     ckpt_dir = f"{args.ckpt_dir}/{args.seed}_{model_type}-{now_time}"
     early_stopping = EarlyStopping(ckpt_dir, patience=args.patience, mode='max', max_to_save=args.max_to_save)
@@ -68,7 +70,8 @@ def run_test(args):
     test_dataloader = get_dataloader(tokenizer, args.dataset_dir, 'test',
                     args.eval_batch_size, args.max_seq_len, args.max_node_len, logger)
     
-    model = AMRModel(args, 18)
+    # load model
+    model = AMRModel(args, 18, test_dataloader.dataset.alpha)
     print_model(model, logger)
 
     trainer = Trainer(model, tokenizer, args, logger)
@@ -101,7 +104,7 @@ if __name__ == "__main__":
     # discourse
     parser.add_argument("--num_global_relations", type=int, default=16)
     parser.add_argument("--num_gloabl_layers", type=int, default=2)    
-    parser.add_argument("--global_hidden_size", type=int, default=200)
+    parser.add_argument("--global_hidden_size", type=int, default=500)
 
     # clf
     parser.add_argument("--clf_hidden_size", type=int, default=300)

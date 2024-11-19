@@ -31,7 +31,7 @@ if __name__ == '__main__':
     cumulative_prob = length_prob.cumsum()
     print(cumulative_prob[:30])
 
-    value_counts.to_csv(f"{DATA_DIR}/final/edge_types.csv", index=True)
+    value_counts.to_csv(f"{DATA_DIR}/final/edge_types_amr.csv", index=True)
 
     # edge_types = list(set(df_edges['edge_types'].to_list()))
     # with open("/public/home/zhouxiabing/data/kywang/amr_md/data/edge_types_set.txt", "w") as f:

@@ -45,6 +45,11 @@ class AMRDataset(Dataset):
             5: 'Anti-authority', 6: 'Dominance', 7: 'Deceit', 8: 'Negative intergroup attitude (NIA)',
             9: 'Violence', 10: 'Privacy invasion', 11: 'Obscenity', 12: 'Phobia', 13: 'Anger',
             14: 'Jealousy', 15: 'Disgust', 16: 'Self-hurt', 17: 'Immoral and illegal'}
+        
+        # 1 - ratio
+        self.alpha = [0.26619782, 0.98713153, 0.98433837, 0.98209387, 0.96538481, 0.98982493,
+                      0.98668263, 0.99361564, 0.98159509, 0.98034815, 0.99211931, 0.97615841,
+                      0.99316674, 0.97286648, 0.99186992, 0.97845279, 0.99251833, 0.98563519]
     
     def __len__(self):
         return len(self.df)
