@@ -105,6 +105,7 @@ class AMRModel(nn.Module):
                 kwargs['num_edges'], kwargs['edge_index'], kwargs['edge_types'])
             
             outputs = self.node_encoder(all_node_input_ids, all_attention_mask)
+            # TODO: 这里有bug
             node_init_features = self.node_init_pool_layer(outputs.last_hidden_state, all_attention_mask)    # [total_num_nodes, hidden_size]
             
             node_features = self.local_conv1(node_init_features, all_edge_index, all_edge_type)

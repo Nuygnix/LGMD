@@ -1,10 +1,12 @@
 import pandas as pd
 from tqdm import tqdm
+import re
 
 
 DATA_DIR = "/public/home/zhouxiabing/data/kywang/AMR_MD/data/"
 
-if __name__ == '__main__':
+
+def step1():
     df = pd.read_json(f"{DATA_DIR}/intermediate/amr_data.jsonl", lines=True)
 
     # 节点数
@@ -23,7 +25,7 @@ if __name__ == '__main__':
 
     
     # 边类型
-    df_edges = pd.DataFrame({'edge_types': [edge[1] for edges in df['edges'] for edge in edges]})
+    df_edges = pd.DataFrame({'edge_types': [merge_edge(edge[1]) for edges in df['edges'] for edge in edges]})
 
     # 使用 value_counts() 统计各元素的频率
     value_counts = df_edges['edge_types'].value_counts()
@@ -82,3 +84,34 @@ if __name__ == '__main__':
     length_prob = value_counts / value_counts.sum()
     cumulative_prob = length_prob.cumsum()
     print(cumulative_prob[:30])
+
+
+def merge_edge(x):
+    if x.endswith("-of"):
+        x = x[:-3]
+    # 时间
+    if x[1:] in ['year', 'time', 'duration', 'decade', 'weekday', 'day',
+                'month', 'timezone', 'quarter', 'dayperiod', 'season', 'year2', 'century', 'era']:
+        return "Temporal"
+    # 列表，选项
+    if re.match(r":op\d+", x):
+        return "Operators"
+    # 多个句子
+    if re.match(r":snt\d+", x):
+        return "Sentences"
+    # 量词
+    if x[1:] in ['quant', 'unit', 'scale']:
+        return "Quantities"
+    # 介词
+    if x.startswith(":prep-"):
+        return "Prepositions"
+    # 位置
+    if x[1:] in ['location', 'destination', 'path']:
+        return "Spatial"
+    if x[1:] in ['age', 'extent', 'subevent', 'range', 'conj-as-if']:
+        return 'Others'
+    return x
+
+if __name__ == '__main__':
+    step1()   
+    

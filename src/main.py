@@ -75,14 +75,13 @@ def run_test(args):
     print_model(model, logger)
 
     trainer = Trainer(model, tokenizer, args, logger)
-    for model_name in os.listdir(args.ckpt_dir):
-        if '.json' in model_name:
-            continue
-        checkpoint = torch.load(os.path.join(args.ckpt_dir, model_name))
-        model.load_state_dict(checkpoint['state_dict'])
-        logger.info(f"Load model state dict from {args.ckpt_dir}/{model_name}")
 
-        trainer.eval(test_dataloader, do_save=False)
+    checkpoint = torch.load(args.ckpt_dir)
+    model.load_state_dict(checkpoint['state_dict'])
+    logger.info(f"Load model state dict from {args.ckpt_dir}")
+
+    trainer.eval(test_dataloader, do_save=True)
+    
 
 
 if __name__ == "__main__":

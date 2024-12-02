@@ -17,6 +17,7 @@ class AMRDataset(Dataset):
 
         #  话语内部amr边的类型转id
         edge_types = pd.read_csv("/public/home/zhouxiabing/data/kywang/AMR_MD/data/final/edge_types_amr.csv")
+        logger.info(f"number of amr edge type is: {len(edge_types)}")
         edge_types = edge_types['edge_types'].to_list()
         self.edge_type2id = {}
         for i, edge_type in enumerate(edge_types):
@@ -28,6 +29,7 @@ class AMRDataset(Dataset):
 
         # 话语之间的语篇关系转id
         disc_edge_types = pd.read_csv("/public/home/zhouxiabing/data/kywang/AMR_MD/data/final/edge_types_ddp.csv")
+        logger.info(f"number of disc edge type is: {len(disc_edge_types)}")
         disc_edge_types = disc_edge_types['edge_types'].to_list()
         self.disc_edge_type2id = {}
         for i, edge_type in enumerate(disc_edge_types):

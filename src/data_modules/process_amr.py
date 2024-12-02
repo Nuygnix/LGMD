@@ -12,8 +12,8 @@ from tqdm import tqdm
 import emoji
 
 
-from transition_amr_parser.parse import AMRParser
 from propbank import trans_node
+tqdm.pandas()
 
 DATA_DIR = "/public/home/zhouxiabing/data/kywang/AMR_MD/data/"
 
@@ -68,6 +68,7 @@ def processTweet(tweet):
 
 
 def step1():
+    from transition_amr_parser.parse import AMRParser
     df = pd.read_csv(f'{DATA_DIR}/origin/origin_data.tsv', sep='\t')
 
     # Download and save a model named AMR3.0 to cache
@@ -138,6 +139,7 @@ def step1():
 def step2():
     #error数据处理
     cnt = 0
+    from transition_amr_parser.parse import AMRParser
     parser = AMRParser.from_pretrained('AMR3-structbart-L')
     with open(f'{DATA_DIR}/intermediate/amr_error.jsonl', "r") as f, open(f'{DATA_DIR}/intermediate/amr_error1.jsonl', "w") as f2:
         while True:
@@ -169,6 +171,39 @@ def step3():
     a = [str(df['number'][i]) + "-" + str(df['turn'][i]) for i in range(len(df))]
     assert len(a) == len(set(a)), "Duplicate data exists!"
 
+    def merge_edge(edge):
+        start, edge_type, end = edge
+        
+        # 以-of结尾的边，方向反转
+        if edge_type.endswith("-of"):
+            edge_type = edge_type[:-3]
+            start, end = end, start
+        # 时间
+        if edge_type[1:] in ['year', 'time', 'duration', 'decade', 'weekday', 'day',
+                 'month', 'timezone', 'quarter', 'dayperiod', 'season', 'year2', 'century', 'era']:
+            edge_type = "Temporal"
+        # 列表，选项
+        elif re.match(r":op\d+", edge_type):
+            edge_type = "Operators"
+        # 多个句子
+        elif re.match(r":snt\d+", edge_type):
+            edge_type = "Sentences"
+        # 介词
+        elif edge_type.startswith(":prep-"):
+            edge_type = "Prepositions"
+        # 量词
+        elif edge_type[1:] in ['quant', 'unit', 'scale']:
+            edge_type = "Quantities"
+        # 空间
+        elif edge_type[1:] in ['location', 'destination', 'path']:
+            edge_type = "Spatial"
+        # 其他
+        if edge_type[1:] in ['age', 'extent', 'subevent', 'range', 'conj-as-if']:
+            edge_type = 'Others'
+
+        return [start, edge_type, end]
+    
+
     def func(x):
         nodes = x['nodes']
         edges = x['edges']
@@ -183,12 +218,13 @@ def step3():
         edge_index = []
         edge_type = []
         for edge in edges:
+            edge = merge_edge(edge)
             edge_index.append([node_to_id[edge[0]], node_to_id[edge[2]]])
             edge_type.append(edge[1])
         
         return node_list, edge_index,  edge_type
 
-    df[['nodes', 'edge_index', 'edge_type']] = df.apply(func, axis=1, result_type='expand')
+    df[['nodes', 'edge_index', 'edge_type']] = df.progress_apply(func, axis=1, result_type='expand')
     df.drop(columns=['edges'], inplace=True)
 
     df = df.sort_values(by=['number', 'turn']).reset_index(drop=True)

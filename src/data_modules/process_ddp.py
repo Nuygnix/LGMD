@@ -24,11 +24,11 @@ We use JSON format for data. The data file should contain an array consisting of
 """
 import json
 import pandas as pd
-DATA_DIR = "/public/home/zhouxiabing/data/kywang/AMR_MD/data/"
+DATA_DIR = "/public/home/zhouxiabing/data/kywang/AMR_MD/data"
 
 
 def step1():
-    data_path = "/public/home/zhouxiabing/data/kywang/AMR_MD/data/final/dev_mdrdc.jsonl"
+    data_path = f"{DATA_DIR}/final/dev_mdrdc.jsonl"
     output_path = "dev.json"
     res = []
     with open(data_path, "r") as f:
@@ -54,7 +54,7 @@ def step1():
 
 
 def step2():
-    split = "dev"
+    split = "test"
     data = json.load(open(f'{DATA_DIR}/intermediate/{split}_ddp.json', 'r'))
     df = pd.read_json(f'{DATA_DIR}/final/{split}_mdrdc.jsonl', lines=True)
     relations = [item['relations'] for item in data]

@@ -10,7 +10,7 @@ proj_dir=/public/home/zhouxiabing/data/kywang/AMR_MD
 
 export CUDA_LAUNCH_BLOCKING=1
 
-seeds=(42 2025 1001)
+seeds=(2030)
 
 
 for seed in "${seeds[@]}"
@@ -34,7 +34,7 @@ python $proj_dir/src/main.py  \
 --warmup_proportion 0. \
 --max_to_save 3 \
 --max_seq_len 128 \
---max_node_len 16 \
+--max_node_len 18 \
 --seed $seed \
 --node_hidden_size1 300 \
 --node_hidden_size2 300 \
@@ -57,7 +57,7 @@ python $proj_dir/src/main.py  \
 --warmup_proportion 0. \
 --max_to_save 3 \
 --max_seq_len 128 \
---max_node_len 16 \
+--max_node_len 18 \
 --seed $seed \
 --node_hidden_size1 300 \
 --node_hidden_size2 300 \
@@ -79,7 +79,7 @@ python $proj_dir/src/main.py  \
 --warmup_proportion 0. \
 --max_to_save 3 \
 --max_seq_len 128 \
---max_node_len 16 \
+--max_node_len 18 \
 --seed $seed \
 --node_hidden_size1 300 \
 --node_hidden_size2 300 \
@@ -100,7 +100,7 @@ python $proj_dir/src/main.py  \
 --warmup_proportion 0. \
 --max_to_save 3 \
 --max_seq_len 128 \
---max_node_len 16 \
+--max_node_len 18 \
 --seed $seed \
 --node_hidden_size1 300 \
 --node_hidden_size2 300 \
