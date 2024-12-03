@@ -33,14 +33,14 @@ class NodeAttentionPooling(nn.Module):
         :param in_dim: 输入节点表征的维度
         """
         super(NodeAttentionPooling, self).__init__()
-        self.attention_weights = nn.Linear(in_dim, 1)  # 学习注意力权重的线性变换
+        # self.attention_weights = nn.Linear(in_dim, 1)  # 学习注意力权重的线性变换
         # TODO: 两层Linear
-        # nn.Sequential(
-        # nn.Linear(in_dim, in_dim),
-        # nn.LayerNorm(in_dim),
-        # nn.GELU(),
-        # nn.Linear(in_dim, 1),
-        # )
+        self.attention_weights = nn.Sequential(
+            nn.Linear(in_dim, in_dim),
+            nn.LayerNorm(in_dim),
+            nn.GELU(),
+            nn.Linear(in_dim, 1),
+        )
 
     def forward(self, node_features, mask=None):
         """

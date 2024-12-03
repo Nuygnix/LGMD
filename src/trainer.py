@@ -4,14 +4,25 @@ from tqdm import trange, tqdm
 from torch.nn.utils import clip_grad_norm_
 import pandas as pd
 import torch
+import os
 from utils.focal_loss import MultiFocalLoss, FocalLoss
 from sklearn.metrics import precision_score, recall_score, f1_score
-device = 'cuda'
-
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
+from utils.tools import get_rank
 
 class Trainer:
     def __init__(self, model, tokenizer, args, logger, early_stopping=None):
-        self.model = model.to(device)
+        self.device = 'cuda'
+        if args.use_ddp:
+            self.device = dist.get_rank() % torch.cuda.device_count()
+            self.model = model.to(self.device)
+
+            local_rank = int(os.environ['LOCAL_RANK'])
+            self.model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
+        else:
+            self.model = model.to(self.device)
+
         self.tokenizer = tokenizer
         self.args = args
         self.early_stopping = early_stopping
@@ -41,16 +52,6 @@ class Trainer:
                     "weight_decay": 0., "lr": self.args.learning_rate
                 }
             ]
-            # optimizer_grouped_parameters = [
-            #     {
-            #         "params": [p for n, p in self.model.named_parameters() if not any(nd in n for nd in no_decay)],
-            #         "weight_decay": self.args.weight_decay,
-            #     },
-            #     {
-            #         "params": [p for n, p in self.model.named_parameters() if any(nd in n for nd in no_decay)],
-            #         "weight_decay": 0.0,
-            #     },
-            # ]
             self.optimizer = AdamW(optimizer_grouped_parameters, lr=self.args.learning_rate)
         elif optimizer_name == "adafactor":
             self.optimizer = Adafactor(
@@ -61,7 +62,8 @@ class Trainer:
             raise NameError("Unknown optimizer")
     
     def set_scheduler(self, train_dataloader):
-        total_batch_size = self.args.train_batch_size * self.args.grad_accum_steps
+        num_gpus = dist.get_world_size() if dist.is_initialized() else 1
+        total_batch_size = self.args.train_batch_size * self.args.grad_accum_steps * num_gpus
         total_steps = int(len(train_dataloader.dataset) / total_batch_size * self.args.epochs)
         warmup_steps = int(total_steps * self.args.warmup_proportion)
         self.scheduler = get_scheduler(
@@ -73,8 +75,8 @@ class Trainer:
 
     def print_basic_info(self, train_dataloader, dev_dataloader):
         self.logger.info("Start Training...")
-        # total_batch_size = self.args.train_batch_size * self.accelerator.num_processes * self.args.grad_accum_steps
-        total_batch_size = self.args.train_batch_size * self.args.grad_accum_steps
+        num_gpus = dist.get_world_size() if dist.is_initialized() else 1
+        total_batch_size = self.args.train_batch_size * self.args.grad_accum_steps * num_gpus
         self.logger.info(f"Train Examples Size:{len(train_dataloader.dataset)}")
         self.logger.info(f"  Dev Examples Size:{len(dev_dataloader.dataset)}")
         self.logger.info(f"  Gradient Accumulation steps = {self.args.grad_accum_steps}")
@@ -111,9 +113,11 @@ class Trainer:
         for epoch in trange(1, self.args.epochs + 1, desc='Epoch'):
             self.model.train()
 
+            if self.args.use_ddp:
+                train_dataloader.sampler.set_epoch(epoch)
             for batch in tqdm(train_dataloader, desc='Training'):
                 for k, v in batch.items():
-                    batch[k] = v.to(device)
+                    batch[k] = v.to(self.device)
 
                 _, loss = self.model(**batch)
 
@@ -128,19 +132,19 @@ class Trainer:
                     self.model_update()
                     effective_step += 1
                     # 打印训练的loss信息
-                    if effective_step % self.args.logging_steps == 0:
+                    if effective_step % self.args.logging_steps == 0 and get_rank() == 0:
                         for key, value in train_loss_dict.items():
                             train_loss_dict[key] = round(value / self.args.logging_steps / self.args.grad_accum_steps, 6)
                         self.logger.info(f"At epoch {epoch} and train step {effective_step} Train Loss: {train_loss_dict}")
                         train_loss_dict = {}
                     
                     # 以step为单位验证
-                    if self.args.eval_steps != -1 and effective_step % self.args.eval_steps == 0:
+                    if self.args.eval_steps != -1 and effective_step % self.args.eval_steps == 0 and get_rank() == 0:
                         self.eval_and_update_model(epoch, effective_step, dev_dataloader, test_dataloader)
                         if self.early_stopping and self.early_stopping.stop_training:
                             break
             # 以epoch为单位验证
-            if self.args.eval_steps == -1:
+            if self.args.eval_steps == -1 and get_rank() == 0:
                 self.eval_and_update_model(epoch, effective_step, dev_dataloader, test_dataloader)
 
             if self.early_stopping and self.early_stopping.stop_training:
@@ -172,7 +176,7 @@ class Trainer:
             all_input_ids = []
             for i, batch in tqdm(enumerate(data_loader), desc=f'eval'):
                 for k, v in batch.items():
-                    batch[k] = v.to(device)
+                    batch[k] = v.to(self.device)
 
                 (logits, labels), loss = self.model(**batch)
                 loss_dict = self.sum_loss(loss_dict, {'loss': loss})
@@ -187,7 +191,7 @@ class Trainer:
                     # 浅浅展示一下分类结果
                     input_ids_flat = batch['input_ids'].view(-1, self.args.max_seq_len)
                     bsz, max_turns, _ = batch['input_ids'].shape
-                    valid_mask = torch.zeros(bsz * max_turns, dtype=torch.bool).to(device)
+                    valid_mask = torch.zeros(bsz * max_turns, dtype=torch.bool).to(self.device)
                     for i in range(bsz):
                         start_idx = i * max_turns
                         valid_mask[start_idx: start_idx + batch['num_turns'][i].item()] = True

@@ -32,23 +32,23 @@ class AMRModel(nn.Module):
             # TODO: 加个Linear
             self.node_init_pool_layer = create_pool_layer("attention", self.bert_config.hidden_size)
             self.local_conv1 = RGATConv(in_channels=self.bert_config.hidden_size,
-                                out_channels=args.node_hidden_size1,
+                                out_channels=args.node_hidden_size,
                                 num_relations=args.num_relations,
-                                num_bases=30, dropout=0.05)
-            self.local_conv2 = RGATConv(in_channels=args.node_hidden_size1,
-                                out_channels=args.node_hidden_size2,
+                                num_bases=30, dropout=0.2)
+            self.local_conv2 = RGATConv(in_channels=args.node_hidden_size,
+                                out_channels=args.node_hidden_size,
                                 num_relations=args.num_relations,
-                                num_bases=30, dropout=0.05)
+                                num_bases=30, dropout=0.2)
 
             # TODO: Attention Pooling / get root features
-            self.node_output_pool_layer = NodeAttentionPooling(args.node_hidden_size2)
-            in_dim += args.node_hidden_size2
+            self.node_output_pool_layer = NodeAttentionPooling(args.node_hidden_size)
+            in_dim += args.node_hidden_size
         
         if args.with_global:
             self.global_conv1 = RGATConv(in_channels=in_dim, out_channels=args.global_hidden_size,
-                                num_relations=args.num_global_relations, num_bases=10, dropout=0.05)
+                                num_relations=args.num_global_relations, num_bases=10, dropout=0.2)
             self.global_conv2 = RGATConv(in_channels=args.global_hidden_size, out_channels=args.global_hidden_size,
-                                num_relations=args.num_global_relations, num_bases=10, dropout=0.05)
+                                num_relations=args.num_global_relations, num_bases=10, dropout=0.2)
             # self.global_conv_layers = [RGATConv(in_channels=in_dim, out_channels=args.global_hidden_size,
             #                     num_relations=args.num_global_relations, num_bases=30, dropout=0.05)]
             # for _ in range(args.num_gloabl_layers - 1):

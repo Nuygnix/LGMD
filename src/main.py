@@ -5,6 +5,9 @@ from models.model import AMRModel
 from trainer import Trainer
 from transformers import BertConfig, BertTokenizer
 from data_modules.data_loader import get_dataloader
+from data_modules.dataset import AMRDataset
+from torch.utils.data import DataLoader
+from torch.utils.data.distributed import DistributedSampler
 from callback.earlystopping import EarlyStopping
 import time
 import torch
@@ -29,13 +32,21 @@ def run_train(args):
     tokenizer = BertTokenizer.from_pretrained(args.plm_path)
 
     # load data
-    train_dataloader = get_dataloader(tokenizer, args.dataset_dir, 'train',
-                    args.train_batch_size, args.max_seq_len, args.max_node_len, logger)
-    dev_dataloader = get_dataloader(tokenizer, args.dataset_dir, 'dev',
-                    args.eval_batch_size, args.max_seq_len, args.max_node_len, logger)
-    test_dataloader = get_dataloader(tokenizer, args.dataset_dir, 'test',
-                    args.eval_batch_size, args.max_seq_len, args.max_node_len, logger)
+    train_dataset = AMRDataset(args.dataset_dir, tokenizer, args.max_seq_len, args.max_node_len, 'train', logger)
+    dev_dataset = AMRDataset(args.dataset_dir, tokenizer, args.max_seq_len, args.max_node_len, 'dev', logger)
+    test_dataset = AMRDataset(args.dataset_dir, tokenizer, args.max_seq_len, args.max_node_len, 'test', logger)
+
+    train_sampler = DistributedSampler(train_dataset, shuffle=True) if args.use_ddp else None
+    train_dataloader = DataLoader(train_dataset, batch_size=args.train_batch_size, sampler=train_sampler,
+                                shuffle=(train_sampler is None), collate_fn=train_dataset.collate_fn)
+    dev_dataloader = DataLoader(dev_dataset, batch_size=args.eval_batch_size,
+                                shuffle=False, collate_fn=dev_dataset.collate_fn)
+    test_dataloader = DataLoader(test_dataset, batch_size=args.eval_batch_size,
+                                shuffle=False, collate_fn=test_dataset.collate_fn)
+    args.num_relations = train_dataset.num_relations
+    args.num_global_relations = train_dataset.num_global_relations
     
+
     # load model
     model = AMRModel(args, 18, train_dataloader.dataset.alpha)
     print_model(model, logger)
@@ -45,12 +56,12 @@ def run_train(args):
     early_stopping = EarlyStopping(ckpt_dir, patience=args.patience, mode='max', max_to_save=args.max_to_save)
     
     # save configuration
-    os.makedirs(ckpt_dir)
-    args_dict = vars(args)
-    with open(f'{ckpt_dir}/args.json', 'w') as f:
-        json.dump(args_dict, f, indent=4)
+    if get_rank() == 0:
+        os.makedirs(ckpt_dir)
+        args_dict = vars(args)
+        with open(f'{ckpt_dir}/args.json', 'w') as f:
+            json.dump(args_dict, f, indent=4)
     
-    # train
     trainer = Trainer(model, tokenizer, args, logger, early_stopping=early_stopping)
     trainer.train(train_dataloader, dev_dataloader, test_dataloader)
 
@@ -94,14 +105,10 @@ if __name__ == "__main__":
     parser.add_argument("--with_global", action='store_true')
 
     # amr
-    parser.add_argument("--num_relations", type=int, default=116) # TODO: 搞个关系列表，自动算
-    parser.add_argument("--node_hidden_size1", type=int, default=200)
-    parser.add_argument("--node_hidden_size2", type=int, default=200)
     parser.add_argument("--node_hidden_size", type=int, default=200)
     parser.add_argument("--num_node_gnn_layer", type=int, default=1)
 
     # discourse
-    parser.add_argument("--num_global_relations", type=int, default=16)
     parser.add_argument("--num_gloabl_layers", type=int, default=2)    
     parser.add_argument("--global_hidden_size", type=int, default=500)
 
@@ -137,7 +144,7 @@ if __name__ == "__main__":
     parser.add_argument("--bert_learning_rate", type=float, default=2e-5)
     parser.add_argument("--learning_rate", type=float, default=8e-5)
     parser.add_argument("--warmup_proportion", type=float, default=0.01)
-    parser.add_argument("--weight_decay", type=float, default=0.01)
+    parser.add_argument("--weight_decay", type=float, default=1e-3)
     parser.add_argument("--grad_clip", default=1, type=float)
 
     # 最多保存多少个ckpt
@@ -145,8 +152,18 @@ if __name__ == "__main__":
 
     # other
     parser.add_argument("--seed", type=int, default=2024)
+    parser.add_argument("--use_ddp", action='store_true')
 
     args = parser.parse_args()
+
+    if args.use_ddp:
+        import torch.distributed as dist
+        dist.init_process_group(backend='nccl')
+    
+        local_rank = int(os.environ['LOCAL_RANK'])
+        torch.cuda.set_device(local_rank)
+        
+        print(local_rank)
 
 
     if args.do_train:

@@ -26,6 +26,7 @@ class AMRDataset(Dataset):
         self.df['edge_type'] = self.df['edge_type'].apply(
             lambda x: [[self.edge_type2id[item] for item in edges] for edges in x]
         )
+        self.num_relations = len(edge_types)
 
         # 话语之间的语篇关系转id
         disc_edge_types = pd.read_csv("/public/home/zhouxiabing/data/kywang/AMR_MD/data/final/edge_types_ddp.csv")
@@ -38,6 +39,7 @@ class AMRDataset(Dataset):
         self.df['disc_edge_types'] = self.df['disc_edge_types'].apply(
             lambda x: [self.disc_edge_type2id[item] for item in x]
         )
+        self.num_global_relations = len(disc_edge_types)
 
         self.max_seq_len = max_seq_len
         self.max_node_len = max_node_len
