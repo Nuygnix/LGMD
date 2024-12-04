@@ -11,6 +11,7 @@ import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from utils.tools import get_rank
 
+
 class Trainer:
     def __init__(self, model, tokenizer, args, logger, early_stopping=None):
         self.device = 'cuda'
@@ -139,10 +140,21 @@ class Trainer:
                         train_loss_dict = {}
                     
                     # 以step为单位验证
-                    if self.args.eval_steps != -1 and effective_step % self.args.eval_steps == 0 and get_rank() == 0:
-                        self.eval_and_update_model(epoch, effective_step, dev_dataloader, test_dataloader)
+                    if self.args.eval_steps != -1 and effective_step % self.args.eval_steps == 0:
+                        if get_rank() == 0:
+                            self.eval_and_update_model(epoch, effective_step, dev_dataloader, test_dataloader)
+                            # self.early_stopping.stop_training = True
+                        # if self.args.use_ddp:
+                        #     print(f"a, {get_rank()}: {self.early_stopping.stop_training}")
+                        #     dist.barrier()  # 等rank 0评估结束
+                        #     self.synchronize_stop_training()    # 同步 stop_training 状态
+                        #     print(f"b, {get_rank()}: {self.early_stopping.stop_training}")
+                        #     dist.barrier()  #确保所有进程都同步好
+                        # print(f"c, {get_rank()}: {self.early_stopping.stop_training}")
+                        
                         if self.early_stopping and self.early_stopping.stop_training:
                             break
+
             # 以epoch为单位验证
             if self.args.eval_steps == -1 and get_rank() == 0:
                 self.eval_and_update_model(epoch, effective_step, dev_dataloader, test_dataloader)
@@ -156,13 +168,30 @@ class Trainer:
         dev_result = self.eval(dev_dataloader, do_save=False, show_reslut=False)
 
         test_score = None
-        if test_dataloader is not None:
+        # if test_dataloader is not None:
+        if test_dataloader is not None and dev_result['macro_f1'] > 0.52:    # 减少测试集的评估次数
             self.logger.info("test results:")
             test_result = self.eval(test_dataloader, do_save=False, show_reslut=False)
             test_score = test_result['macro_f1']
 
         if self.early_stopping:
             self.early_stopping.update(step, dev_result['macro_f1'], self.model, test_score)
+    
+
+    def synchronize_stop_training(self):
+        # 创建一个张量来保存每个进程的stop_training状态
+        local_rank = int(os.environ['LOCAL_RANK'])
+        stop_tensor = torch.tensor([self.early_stopping.stop_training], dtype=torch.int).to(local_rank)
+
+        # 使用 all_reduce 来同步所有进程的 stop_training 状态
+        dist.all_reduce(stop_tensor, op=dist.ReduceOp.SUM)
+
+        # 如果所有进程的stop_training值都为1，则全体停止训练
+        if stop_tensor.item() > 0:
+            self.early_stopping.stop_training = True
+        else:
+            self.early_stopping.stop_training = False
+
 
 
     def eval(self, data_loader, do_save=False, show_reslut=True):
@@ -205,7 +234,7 @@ class Trainer:
             # 计算loss
             for key, value in loss_dict.items():
                 loss_dict[key] = round(value / len(data_loader), 6)
-            self.logger.info(f"dev loss = {loss_dict}")
+            self.logger.info(f"eval loss = {loss_dict}")
 
             result = loss_dict
             

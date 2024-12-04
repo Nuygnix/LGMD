@@ -65,6 +65,9 @@ def run_train(args):
     trainer = Trainer(model, tokenizer, args, logger, early_stopping=early_stopping)
     trainer.train(train_dataloader, dev_dataloader, test_dataloader)
 
+    if args.use_ddp:
+        dist.destroy_process_group()
+
 
 
 def run_test(args):
@@ -86,12 +89,19 @@ def run_test(args):
     print_model(model, logger)
 
     trainer = Trainer(model, tokenizer, args, logger)
+    if os.path.isdir(args.ckpt_dir):
+        for model_name in os.listdir(args.ckpt_dir):
+            checkpoint = torch.load(os.path.join(args.ckpt_dir, model_name))
+            model.load_state_dict(checkpoint['state_dict'])
+            logger.info(f"Load model state dict from {args.ckpt_dir}/{model_name}")
 
-    checkpoint = torch.load(args.ckpt_dir)
-    model.load_state_dict(checkpoint['state_dict'])
-    logger.info(f"Load model state dict from {args.ckpt_dir}")
+            trainer.eval(test_dataloader, do_save=False)
+    else:
+        checkpoint = torch.load(args.ckpt_dir)
+        model.load_state_dict(checkpoint['state_dict'])
+        logger.info(f"Load model state dict from {args.ckpt_dir}")
 
-    trainer.eval(test_dataloader, do_save=True)
+        trainer.eval(test_dataloader, do_save=False)
     
 
 

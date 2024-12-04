@@ -4,13 +4,13 @@ proj_dir=/public/home/zhouxiabing/data/kywang/AMR_MD
 
 export CUDA_LAUNCH_BLOCKING=1
 
-seeds=(2030 2080 42 2024 2025 2001 1217 1115 1001)
+seeds=(2080 42 2024 2025 2001 1217 1115 1001)
 
 for seed in "${seeds[@]}"; do
 
     echo "Running with seed $seed"
 
-CUDA_VISIBLE_DEVICES="0" python $proj_dir/src/main.py \
+CUDA_VISIBLE_DEVICES="1" python $proj_dir/src/main.py \
 --do_train \
 --with_inner_syntax \
 --with_global \
@@ -24,7 +24,8 @@ CUDA_VISIBLE_DEVICES="0" python $proj_dir/src/main.py \
 --patience 6 \
 --bert_learning_rate 1e-5 \
 --learning_rate 2e-5 \
---warmup_proportion 0.02 \
+--warmup_proportion 0. \
+--weight_decay 0.01 \
 --max_to_save 3 \
 --max_seq_len 128 \
 --max_node_len 18 \
@@ -33,7 +34,7 @@ CUDA_VISIBLE_DEVICES="0" python $proj_dir/src/main.py \
 --global_hidden_size 500
 
 
-CUDA_VISIBLE_DEVICES="0" python $proj_dir/src/main.py \
+CUDA_VISIBLE_DEVICES="1" python $proj_dir/src/main.py \
 --do_train \
 --with_global \
 --plm_path /public/home/zhouxiabing/data/kywang/plms/bert-base-uncased \
@@ -46,7 +47,8 @@ CUDA_VISIBLE_DEVICES="0" python $proj_dir/src/main.py \
 --patience 6 \
 --bert_learning_rate 1e-5 \
 --learning_rate 2e-5 \
---warmup_proportion 0.02 \
+--warmup_proportion 0. \
+--weight_decay 0.01 \
 --max_to_save 3 \
 --max_seq_len 128 \
 --max_node_len 18 \
@@ -56,7 +58,7 @@ CUDA_VISIBLE_DEVICES="0" python $proj_dir/src/main.py \
 
 
 
-CUDA_VISIBLE_DEVICES="0" python $proj_dir/src/main.py \
+CUDA_VISIBLE_DEVICES="1" python $proj_dir/src/main.py \
 --do_train \
 --with_inner_syntax \
 --plm_path /public/home/zhouxiabing/data/kywang/plms/bert-base-uncased \
@@ -69,7 +71,8 @@ CUDA_VISIBLE_DEVICES="0" python $proj_dir/src/main.py \
 --patience 6 \
 --bert_learning_rate 1e-5 \
 --learning_rate 2e-5 \
---warmup_proportion 0.02 \
+--warmup_proportion 0. \
+--weight_decay 0.01 \
 --max_to_save 3 \
 --max_seq_len 128 \
 --max_node_len 18 \
@@ -78,7 +81,7 @@ CUDA_VISIBLE_DEVICES="0" python $proj_dir/src/main.py \
 --global_hidden_size 500
 
 
-CUDA_VISIBLE_DEVICES="0" python $proj_dir/src/main.py \
+CUDA_VISIBLE_DEVICES="1" python $proj_dir/src/main.py \
 --do_train \
 --plm_path /public/home/zhouxiabing/data/kywang/plms/bert-base-uncased \
 --ckpt_dir /public/home/zhouxiabing/data/kywang/AMR_MD/ckpts \
@@ -90,7 +93,8 @@ CUDA_VISIBLE_DEVICES="0" python $proj_dir/src/main.py \
 --patience 6 \
 --bert_learning_rate 1e-5 \
 --learning_rate 2e-5 \
---warmup_proportion 0.02 \
+--warmup_proportion 0. \
+--weight_decay 0.01 \
 --max_to_save 3 \
 --max_seq_len 128 \
 --max_node_len 18 \
