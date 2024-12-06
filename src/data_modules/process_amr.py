@@ -67,14 +67,14 @@ def processTweet(tweet):
 
 
 
-def step1():
+def step1(dataset_name):
     from transition_amr_parser.parse import AMRParser
-    df = pd.read_csv(f'{DATA_DIR}/origin/origin_data.tsv', sep='\t')
+    df = pd.read_csv(f'{DATA_DIR}/origin/{dataset_name}origin_data.tsv', sep='\t')
 
     # Download and save a model named AMR3.0 to cache
     parser = AMRParser.from_pretrained('AMR3-structbart-L')
 
-    with open(f'{DATA_DIR}/intermediate/amr_data.jsonl', "w") as f, open(f'{DATA_DIR}/intermediate/amr_error.jsonl', 'w') as f2:
+    with open(f'{DATA_DIR}/intermediate/{dataset_name}amr_data.jsonl', "w") as f, open(f'{DATA_DIR}/intermediate/{dataset_name}amr_error.jsonl', 'w') as f2:
         batch = []
         bsz = 128
         for i in tqdm(range(len(df))):
@@ -136,12 +136,12 @@ def step1():
                     f2.write(json.dumps(utterance) + "\n")
 
 
-def step2():
+def step2(dataset_name):
     #error数据处理
     cnt = 0
     from transition_amr_parser.parse import AMRParser
     parser = AMRParser.from_pretrained('AMR3-structbart-L')
-    with open(f'{DATA_DIR}/intermediate/amr_error.jsonl', "r") as f, open(f'{DATA_DIR}/intermediate/amr_error1.jsonl', "w") as f2:
+    with open(f'{DATA_DIR}/intermediate/{dataset_name}amr_error.jsonl', "r") as f, open(f'{DATA_DIR}/intermediate/{dataset_name}amr_error1.jsonl', "w") as f2:
         while True:
             line = f.readline()
             if not line:
@@ -163,9 +163,9 @@ def step2():
             if cnt % 30 == 0:
                 print(cnt)
 
-def step3():
+def step3(dataset_name):
     # 节点替换成相应定义
-    df = pd.read_json(f'{DATA_DIR}/intermediate/amr_data.jsonl', lines=True)
+    df = pd.read_json(f'{DATA_DIR}/intermediate/{dataset_name}amr_data.jsonl', lines=True)
     df.drop(columns=['tokens', 'positions', 'sentence', 'alignments'], inplace=True)
 
     a = [str(df['number'][i]) + "-" + str(df['turn'][i]) for i in range(len(df))]
@@ -231,8 +231,8 @@ def step3():
     df = df.groupby('number').agg(list).reset_index()
 
     # 划分训练集、验证集、测试集
-    dev_id_list = pickle.load(open(f'{DATA_DIR}/origin/dev_id_list.pickle', 'rb'))
-    test_id_list = pickle.load(open(f'{DATA_DIR}/origin/test_id_list.pickle', 'rb'))
+    dev_id_list = pickle.load(open(f'{DATA_DIR}/origin/{dataset_name}dev_id_list.pickle', 'rb'))
+    test_id_list = pickle.load(open(f'{DATA_DIR}/origin/{dataset_name}test_id_list.pickle', 'rb'))
     dev_id_list = [int(id) for id in dev_id_list]
     test_id_list = [int(id) for id in test_id_list]
 
@@ -241,9 +241,9 @@ def step3():
     train_df = df[~df['number'].isin(dev_id_list + test_id_list)]
 
     # 保存为 jsonl 文件
-    train_df.to_json(f"{DATA_DIR}/final/train_mdrdc.jsonl", orient="records", lines=True)
-    dev_df.to_json(f"{DATA_DIR}/final/dev_mdrdc.jsonl", orient="records", lines=True)
-    test_df.to_json(f"{DATA_DIR}/final/test_mdrdc.jsonl", orient="records", lines=True)
+    train_df.to_json(f"{DATA_DIR}/final/{dataset_name}train_mdrdc.jsonl", orient="records", lines=True)
+    dev_df.to_json(f"{DATA_DIR}/final/{dataset_name}dev_mdrdc.jsonl", orient="records", lines=True)
+    test_df.to_json(f"{DATA_DIR}/final/{dataset_name}test_mdrdc.jsonl", orient="records", lines=True)
 
     print(f"total num of dialogue is {len(df)}")
     print(f"train num of dialogue is {len(train_df)}")
