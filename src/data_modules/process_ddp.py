@@ -27,9 +27,9 @@ import pandas as pd
 DATA_DIR = "/public/home/zhouxiabing/data/kywang/AMR_MD/data"
 
 
-def step1():
-    data_path = f"{DATA_DIR}/final/dev_mdrdc.jsonl"
-    output_path = "dev.json"
+def step1(dataset_name, split):
+    data_path = f"{DATA_DIR}/final/{dataset_name}/{split}_{dataset_name}.jsonl"
+    output_path = f"{split}.json"
     res = []
     with open(data_path, "r") as f:
         while True:
@@ -53,10 +53,9 @@ def step1():
 
 
 
-def step2():
-    split = "test"
-    data = json.load(open(f'{DATA_DIR}/intermediate/{split}_ddp.json', 'r'))
-    df = pd.read_json(f'{DATA_DIR}/final/{split}_mdrdc.jsonl', lines=True)
+def step2(dataset_name, split):
+    data = json.load(open(f'{DATA_DIR}/intermediate/{dataset_name}/{split}_ddp.json', 'r'))
+    df = pd.read_json(f'{DATA_DIR}/final/{dataset_name}/{split}_{dataset_name}.jsonl', lines=True)
     relations = [item['relations'] for item in data]
     edge_index = []
     edge_type = []
@@ -75,11 +74,11 @@ def step2():
     df['disc_edge_types'] = edge_type
     df['num_disc_edges'] = num_edges
 
-    df.to_json(f"{DATA_DIR}/final/{split}_mdrdc.jsonl", orient="records", lines=True)
+    df.to_json(f"{DATA_DIR}/final/{dataset_name}/{split}_{dataset_name}.jsonl", orient="records", lines=True)
 
 
 if __name__ == '__main__':
-    # step1() # 处理完交给DDP模型解析
-    step2()
+    # step1('toxichat', 'test') # 处理完交给DDP模型解析
+    step2('toxichat', 'dev')
 
 

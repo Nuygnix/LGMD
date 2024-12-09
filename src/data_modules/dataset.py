@@ -5,9 +5,9 @@ import torch
 
 
 class AMRDataset(Dataset):
-    def __init__(self, dataset_dir, tokenizer, max_seq_len, max_node_len, split, logger):
+    def __init__(self, dataset_dir, tokenizer, max_seq_len, max_node_len, split, dataset_name, logger):
         super().__init__()
-        dataset_path = f"{dataset_dir}/{split}_mdrdc.jsonl"
+        dataset_path = f"{dataset_dir}/{dataset_name}/{split}_{dataset_name}.jsonl"
         self.df = pd.read_json(dataset_path, lines=True)
 
         logger.info(f"load data from {dataset_path}")
@@ -16,7 +16,7 @@ class AMRDataset(Dataset):
         logger.info(f"total number of utterance:\t {total_utterances}")
 
         #  话语内部amr边的类型转id
-        edge_types = pd.read_csv("/public/home/zhouxiabing/data/kywang/AMR_MD/data/final/edge_types_amr.csv")
+        edge_types = pd.read_csv(f"{dataset_dir}/edge_types_amr.csv")
         logger.info(f"number of amr edge type is: {len(edge_types)}")
         edge_types = edge_types['edge_types'].to_list()
         self.edge_type2id = {}
@@ -29,7 +29,7 @@ class AMRDataset(Dataset):
         self.num_relations = len(edge_types)
 
         # 话语之间的语篇关系转id
-        disc_edge_types = pd.read_csv("/public/home/zhouxiabing/data/kywang/AMR_MD/data/final/edge_types_ddp.csv")
+        disc_edge_types = pd.read_csv(f"{dataset_dir}/edge_types_ddp.csv")
         logger.info(f"number of disc edge type is: {len(disc_edge_types)}")
         disc_edge_types = disc_edge_types['edge_types'].to_list()
         self.disc_edge_type2id = {}
@@ -45,16 +45,25 @@ class AMRDataset(Dataset):
         self.max_node_len = max_node_len
         self.tokenizer = tokenizer
 
-        self.id2label = {0: 'Non-malevolent', 1: 'Unconcernedness', 2: 'Detachment', 3: 'Blame', 4: 'Arrogance',
-            5: 'Anti-authority', 6: 'Dominance', 7: 'Deceit', 8: 'Negative intergroup attitude (NIA)',
-            9: 'Violence', 10: 'Privacy invasion', 11: 'Obscenity', 12: 'Phobia', 13: 'Anger',
-            14: 'Jealousy', 15: 'Disgust', 16: 'Self-hurt', 17: 'Immoral and illegal'}
-        
-        # 1 - ratio
-        self.alpha = [0.26619782, 0.98713153, 0.98433837, 0.98209387, 0.96538481, 0.98982493,
-                      0.98668263, 0.99361564, 0.98159509, 0.98034815, 0.99211931, 0.97615841,
-                      0.99316674, 0.97286648, 0.99186992, 0.97845279, 0.99251833, 0.98563519]
-    
+        if dataset_name == 'mdrdc':
+            self.id2label = {0: 'Non-malevolent', 1: 'Unconcernedness', 2: 'Detachment', 3: 'Blame', 4: 'Arrogance',
+                5: 'Anti-authority', 6: 'Dominance', 7: 'Deceit', 8: 'Negative intergroup attitude (NIA)',
+                9: 'Violence', 10: 'Privacy invasion', 11: 'Obscenity', 12: 'Phobia', 13: 'Anger',
+                14: 'Jealousy', 15: 'Disgust', 16: 'Self-hurt', 17: 'Immoral and illegal'}
+            
+            # 1 - ratio
+            self.alpha = [0.26619782, 0.98713153, 0.98433837, 0.98209387, 0.96538481, 0.98982493,
+                        0.98668263, 0.99361564, 0.98159509, 0.98034815, 0.99211931, 0.97615841,
+                        0.99316674, 0.97286648, 0.99186992, 0.97845279, 0.99251833, 0.98563519]
+            
+        elif dataset_name == 'toxichat':
+            self.id2label = {0: 'Safe', 1: 'Offensive'}
+            # 1 - ratio
+            self.alpha = [0.261615, 0.738385]
+        else:
+            raise Exception("dataset name must be in [toxichat, mdrdc]")
+
+
     def __len__(self):
         return len(self.df)
     

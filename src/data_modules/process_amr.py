@@ -15,7 +15,7 @@ import emoji
 from propbank import trans_node
 tqdm.pandas()
 
-DATA_DIR = "/public/home/zhouxiabing/data/kywang/AMR_MD/data/"
+DATA_DIR = "/public/home/zhouxiabing/data/kywang/AMR_MD/data"
 
 
 def processTweet(tweet):
@@ -69,21 +69,26 @@ def processTweet(tweet):
 
 def step1(dataset_name):
     from transition_amr_parser.parse import AMRParser
-    df = pd.read_csv(f'{DATA_DIR}/origin/{dataset_name}origin_data.tsv', sep='\t')
+    df = pd.read_csv(f'{DATA_DIR}/origin/{dataset_name}/origin_data.tsv', sep='\t')
 
     # Download and save a model named AMR3.0 to cache
     parser = AMRParser.from_pretrained('AMR3-structbart-L')
 
-    with open(f'{DATA_DIR}/intermediate/{dataset_name}amr_data.jsonl', "w") as f, open(f'{DATA_DIR}/intermediate/{dataset_name}amr_error.jsonl', 'w') as f2:
+    with open(f'{DATA_DIR}/intermediate/{dataset_name}/amr_data.jsonl', "w") as f, open(f'{DATA_DIR}/intermediate/{dataset_name}/amr_error.jsonl', 'w') as f2:
         batch = []
         bsz = 128
         for i in tqdm(range(len(df))):
             number = df['Number'][i]
             turn = df['turn'][i]
             utterance = df['utterance'][i]
+            if pd.isna(utterance):
+                continue
             c_r = df['c_r'][i]
             label = df['label'][i]
-            clean_text = processTweet(utterance)
+            if dataset_name == 'mdrdc':
+                clean_text = processTweet(utterance)
+            else:
+                clean_text = utterance
             utterance = {
                 'number': int(number),
                 'turn': int(turn),
@@ -141,7 +146,7 @@ def step2(dataset_name):
     cnt = 0
     from transition_amr_parser.parse import AMRParser
     parser = AMRParser.from_pretrained('AMR3-structbart-L')
-    with open(f'{DATA_DIR}/intermediate/{dataset_name}amr_error.jsonl', "r") as f, open(f'{DATA_DIR}/intermediate/{dataset_name}amr_error1.jsonl', "w") as f2:
+    with open(f'{DATA_DIR}/intermediate/{dataset_name}/amr_error.jsonl', "r") as f, open(f'{DATA_DIR}/intermediate/{dataset_name}/amr_error1.jsonl', "w") as f2:
         while True:
             line = f.readline()
             if not line:
@@ -159,13 +164,20 @@ def step2(dataset_name):
                 utterance['roots'] = amr.roots
                 f2.write(json.dumps(utterance) + "\n")
             except:
-                breakpoint()
+                if len(utterance['tokens']) != 1:
+                    breakpoint()
+                utterance['nodes'] = {utterance['tokens'][0][:2]: utterance['tokens'][0]}
+                utterance['edges'] = []
+                utterance['sentence'] = None
+                utterance['alignments'] = dict()
+                utterance['root'] = utterance['tokens'][0][:2]
+                utterance['roots'] = []
             if cnt % 30 == 0:
                 print(cnt)
 
 def step3(dataset_name):
     # 节点替换成相应定义
-    df = pd.read_json(f'{DATA_DIR}/intermediate/{dataset_name}amr_data.jsonl', lines=True)
+    df = pd.read_json(f'{DATA_DIR}/intermediate/{dataset_name}/amr_data.jsonl', lines=True)
     df.drop(columns=['tokens', 'positions', 'sentence', 'alignments'], inplace=True)
 
     a = [str(df['number'][i]) + "-" + str(df['turn'][i]) for i in range(len(df))]
@@ -198,7 +210,7 @@ def step3(dataset_name):
         elif edge_type[1:] in ['location', 'destination', 'path']:
             edge_type = "Spatial"
         # 其他
-        if edge_type[1:] in ['age', 'extent', 'subevent', 'range', 'conj-as-if']:
+        if edge_type[1:] in ['age', 'extent', 'subevent', 'range', 'conj-as-if', 'ARG7']:
             edge_type = 'Others'
 
         return [start, edge_type, end]
@@ -231,8 +243,8 @@ def step3(dataset_name):
     df = df.groupby('number').agg(list).reset_index()
 
     # 划分训练集、验证集、测试集
-    dev_id_list = pickle.load(open(f'{DATA_DIR}/origin/{dataset_name}dev_id_list.pickle', 'rb'))
-    test_id_list = pickle.load(open(f'{DATA_DIR}/origin/{dataset_name}test_id_list.pickle', 'rb'))
+    dev_id_list = pickle.load(open(f'{DATA_DIR}/origin/{dataset_name}/dev_id_list.pickle', 'rb'))
+    test_id_list = pickle.load(open(f'{DATA_DIR}/origin/{dataset_name}/test_id_list.pickle', 'rb'))
     dev_id_list = [int(id) for id in dev_id_list]
     test_id_list = [int(id) for id in test_id_list]
 
@@ -241,9 +253,9 @@ def step3(dataset_name):
     train_df = df[~df['number'].isin(dev_id_list + test_id_list)]
 
     # 保存为 jsonl 文件
-    train_df.to_json(f"{DATA_DIR}/final/{dataset_name}train_mdrdc.jsonl", orient="records", lines=True)
-    dev_df.to_json(f"{DATA_DIR}/final/{dataset_name}dev_mdrdc.jsonl", orient="records", lines=True)
-    test_df.to_json(f"{DATA_DIR}/final/{dataset_name}test_mdrdc.jsonl", orient="records", lines=True)
+    train_df.to_json(f"{DATA_DIR}/final/{dataset_name}/train_{dataset_name}.jsonl", orient="records", lines=True)
+    dev_df.to_json(f"{DATA_DIR}/final/{dataset_name}/dev_{dataset_name}.jsonl", orient="records", lines=True)
+    test_df.to_json(f"{DATA_DIR}/final/{dataset_name}/test_{dataset_name}.jsonl", orient="records", lines=True)
 
     print(f"total num of dialogue is {len(df)}")
     print(f"train num of dialogue is {len(train_df)}")
@@ -253,12 +265,13 @@ def step3(dataset_name):
 
 
 if __name__ == '__main__':
-    # step1()
-    # step2()
-    # with open("/public/home/zhouxiabing/data/kywang/AMR_MD/data/amr_data.jsonl", "a") as f1, open("/public/home/zhouxiabing/data/kywang/AMR_MD/data/amr_error1.jsonl", "r") as f2:
+    dataset_name = 'toxichat'
+    # step1(dataset_name)
+    # step2(dataset_name)
+    # with open(f"{DATA_DIR}/intermediate/{dataset_name}/amr_data.jsonl", "a") as f1, open(f"{DATA_DIR}/intermediate/{dataset_name}/amr_error1.jsonl", "r") as f2:
     #     while True:
     #         line = f2.readline()
     #         if not line:
     #             break
     #         f1.write(line)
-    step3()
+    step3(dataset_name)

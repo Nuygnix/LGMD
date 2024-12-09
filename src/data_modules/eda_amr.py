@@ -7,7 +7,7 @@ DATA_DIR = "/public/home/zhouxiabing/data/kywang/AMR_MD/data/"
 
 
 def step1():
-    df = pd.read_json(f"{DATA_DIR}/intermediate/amr_data.jsonl", lines=True)
+    df = pd.read_json(f"{DATA_DIR}/intermediate/toxichat/amr_data.jsonl", lines=True)
 
     # 节点数
     df['num_nodes'] = df['nodes'].apply(len)
@@ -33,7 +33,7 @@ def step1():
     cumulative_prob = length_prob.cumsum()
     print(cumulative_prob[:30])
 
-    value_counts.to_csv(f"{DATA_DIR}/final/edge_types_amr.csv", index=True)
+    value_counts.to_csv(f"{DATA_DIR}/final/toxichat/edge_types_amr.csv", index=True)
 
     # edge_types = list(set(df_edges['edge_types'].to_list()))
     # with open("/public/home/zhouxiabing/data/kywang/amr_md/data/edge_types_set.txt", "w") as f:
@@ -47,12 +47,12 @@ def step1():
             node_list.append(node)
     
     node_list = list(set(node_list))
-    with open(f"{DATA_DIR}/intermediate/node_set.txt", "w") as f:
+    with open(f"{DATA_DIR}/intermediate/toxichat/node_set.txt", "w") as f:
         for node in node_list:
             f.write(node + "\n")
 
     # 统计话语和节点文本的id长度分布
-    df = pd.read_json(f"{DATA_DIR}/final/train_mdrdc.jsonl", lines=True)
+    df = pd.read_json(f"{DATA_DIR}/final/toxichat/train_toxichat.jsonl", lines=True)
     from transformers import BertTokenizer
     tokenizer = BertTokenizer.from_pretrained("/public/home/zhouxiabing/data/kywang/plms/bert-base-uncased")
     utterance_lens = []

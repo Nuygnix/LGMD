@@ -32,9 +32,9 @@ def run_train(args):
     tokenizer = BertTokenizer.from_pretrained(args.plm_path)
 
     # load data
-    train_dataset = AMRDataset(args.dataset_dir, tokenizer, args.max_seq_len, args.max_node_len, 'train', logger)
-    dev_dataset = AMRDataset(args.dataset_dir, tokenizer, args.max_seq_len, args.max_node_len, 'dev', logger)
-    test_dataset = AMRDataset(args.dataset_dir, tokenizer, args.max_seq_len, args.max_node_len, 'test', logger)
+    train_dataset = AMRDataset(args.dataset_dir, tokenizer, args.max_seq_len, args.max_node_len, 'train', args.dataset_name, logger)
+    dev_dataset = AMRDataset(args.dataset_dir, tokenizer, args.max_seq_len, args.max_node_len, 'dev', args.dataset_name, logger)
+    test_dataset = AMRDataset(args.dataset_dir, tokenizer, args.max_seq_len, args.max_node_len, 'test', args.dataset_name, logger)
 
     train_sampler = DistributedSampler(train_dataset, shuffle=True) if args.use_ddp else None
     train_dataloader = DataLoader(train_dataset, batch_size=args.train_batch_size, sampler=train_sampler,
@@ -48,11 +48,12 @@ def run_train(args):
     
 
     # load model
-    model = AMRModel(args, 18, train_dataloader.dataset.alpha)
+    num_labels = len(train_dataset.id2label)
+    model = AMRModel(args, num_labels, train_dataset.alpha)
     print_model(model, logger)
 
     # train
-    ckpt_dir = f"{args.ckpt_dir}/{args.seed}_{model_type}-{now_time}"
+    ckpt_dir = f"{args.ckpt_dir}/{args.dataset_name}/{args.seed}_{model_type}-{now_time}"
     early_stopping = EarlyStopping(ckpt_dir, patience=args.patience, mode='max', max_to_save=args.max_to_save)
     
     # save configuration
@@ -109,6 +110,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="The arguments of Conversation")
     parser.add_argument("--do_train", action='store_true')
     parser.add_argument("--do_test", action='store_true')
+    parser.add_argument("--dataset_name", default="mdrdc", type=str)
 
     # model type
     parser.add_argument("--with_inner_syntax", action='store_true')
